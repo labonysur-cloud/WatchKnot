@@ -27,7 +27,7 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
         {/* Media Player Section */}
         {movie.videoUrl && (
           <div style={{ marginBottom: "30px" }}>
-            <MediaPlayer videoUrl={movie.videoUrl} title={movie.title} />
+            <MediaPlayer videoUrl={movie.videoUrl} title={movie.title} movieId={movie.id} />
           </div>
         )}
 

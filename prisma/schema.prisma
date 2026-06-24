@@ -93,6 +93,8 @@ model Ticket {
 
   movie        Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, seatRow, seatNumber])
 }
 
 model Friendship {
@@ -112,6 +114,7 @@ model Post {
   id        String   @id @default(cuid())
   userId    String
   content   String
+  ticketId  String?
   privacy   String   @default("FRIENDS")
   createdAt DateTime @default(now())
 

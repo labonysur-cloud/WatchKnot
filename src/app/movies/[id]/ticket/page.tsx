@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Download, Scissors } from "lucide-react";
+import { Loader2, ArrowLeft, Download, Scissors, FileText, Share2, Users } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 export default function TicketPage() {
   const { user, loading: authLoading, getToken } = useAuth();
@@ -14,31 +16,86 @@ export default function TicketPage() {
   const id = params?.id as string;
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
-    if (!authLoading && user && id) fetchOrGenerateTicket();
+    if (!authLoading && user && id) fetchTicket();
   }, [user, authLoading, id]);
 
-  const fetchOrGenerateTicket = async () => {
+  const fetchTicket = async () => {
     try {
       const token = await getToken();
-      // First try to generate a new one
-      const res = await fetch("/api/tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ movieId: id }),
+      const res = await fetch(`/api/tickets/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.ticket) {
         setTicket(data.ticket);
       } else {
-        console.error(data.message);
+        router.push(`/movies/${id}/book`);
       }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadPNG = async () => {
+    const element = document.getElementById("ticket-capture");
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, { backgroundColor: null, scale: 2 });
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `WatchKnot_Ticket_${ticket.id.substring(ticket.id.length - 6)}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const downloadPDF = async () => {
+    const element = document.getElementById("ticket-capture");
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, { backgroundColor: null, scale: 2 });
+      const dataUrl = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "px",
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+      pdf.addImage(dataUrl, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`WatchKnot_Ticket_${ticket.id.substring(ticket.id.length - 6)}.pdf`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const shareToJournal = async () => {
+    setSharing(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ 
+          content: `I just booked my ticket for ${ticket.movie.title}! 🍿🎟️`,
+          ticketId: ticket.id 
+        })
+      });
+      if (res.ok) {
+        alert("Ticket shared to your Journal!");
+      } else {
+        alert("Failed to share to Journal.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -67,7 +124,7 @@ export default function TicketPage() {
 
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} style={{ width: "100%", maxWidth: "800px" }}>
         {/* CSS VINTAGE TICKET */}
-        <div style={{ 
+        <div id="ticket-capture" style={{ 
           display: "flex", 
           backgroundColor: "#fff", 
           borderRadius: "12px", 
@@ -146,14 +203,27 @@ export default function TicketPage() {
               ))}
             </div>
           </div>
-
         </div>
         {/* END VINTAGE TICKET */}
 
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
-          <button className="btn-primary" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", borderRadius: "30px", fontSize: "1.1rem", border: "none", cursor: "pointer", boxShadow: "0 4px 15px rgba(124, 45, 59, 0.3)" }}>
-            <Download size={20} /> Save Ticket
+        <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginTop: "40px", flexWrap: "wrap" }}>
+          <button onClick={downloadPNG} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "30px", fontSize: "1rem", border: "none", cursor: "pointer", boxShadow: "0 4px 15px rgba(124, 45, 59, 0.3)" }}>
+            <Download size={18} /> Save as PNG
           </button>
+          
+          <button onClick={downloadPDF} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "30px", fontSize: "1rem", border: "none", cursor: "pointer", boxShadow: "0 4px 15px rgba(124, 45, 59, 0.3)", backgroundColor: "#333" }}>
+            <FileText size={18} /> Save as PDF
+          </button>
+
+          <button onClick={shareToJournal} disabled={sharing} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "30px", fontSize: "1rem", border: "2px solid var(--color-maroon)", backgroundColor: "transparent", color: "var(--color-maroon)", cursor: sharing ? "not-allowed" : "pointer", fontWeight: "bold" }}>
+            {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />} Share to Journal
+          </button>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
+          <Link href={`/movies/${id}`} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "16px 40px", borderRadius: "30px", fontSize: "1.2rem", border: "none", cursor: "pointer", textDecoration: "none", boxShadow: "0 4px 20px rgba(124, 45, 59, 0.4)", backgroundColor: "var(--color-maroon)" }}>
+            <Users size={24} /> Watch Together
+          </Link>
         </div>
 
       </motion.div>

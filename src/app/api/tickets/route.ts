@@ -10,11 +10,26 @@ export async function POST(req: Request) {
     const user = await getAuthUser(req);
     if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const { movieId } = await req.json();
+    const { movieId, seats } = await req.json();
     if (!movieId) return NextResponse.json({ message: "Movie ID is required" }, { status: 400 });
+    if (!seats || !Array.isArray(seats) || seats.length === 0 || seats.length > 2) {
+      return NextResponse.json({ message: "Please select 1 or 2 seats" }, { status: 400 });
+    }
 
     const movie = await prisma.movie.findUnique({ where: { id: movieId } });
     if (!movie) return NextResponse.json({ message: "Movie not found" }, { status: 404 });
+
+    // Ensure seats aren't already booked
+    const existingTickets = await prisma.ticket.findMany({
+      where: {
+        movieId,
+        OR: seats.map(s => ({ seatRow: s.row, seatNumber: s.number })),
+      },
+    });
+
+    if (existingTickets.length > 0) {
+      return NextResponse.json({ message: "One or more selected seats are already booked" }, { status: 400 });
+    }
 
     let message = "Enjoy the show! Grab some popcorn and relax.";
 
@@ -32,25 +47,33 @@ export async function POST(req: Request) {
       }
     }
 
-    // Generate random seat
-    const rows = "ABCDEFGH";
-    const seatRow = rows[Math.floor(Math.random() * rows.length)];
-    const seatNumber = Math.floor(Math.random() * 20) + 1;
-
-    const ticket = await prisma.ticket.create({
-      data: {
-        userId: user.uid,
-        movieId,
-        message,
-        seatRow,
-        seatNumber,
-      },
-      include: {
-        movie: true,
+    // Create tickets sequentially to handle potential race conditions gracefully
+    const createdTickets = [];
+    for (const seat of seats) {
+      try {
+        const ticket = await prisma.ticket.create({
+          data: {
+            userId: user.uid,
+            movieId,
+            message,
+            seatRow: seat.row,
+            seatNumber: seat.number,
+          },
+          include: {
+            movie: true,
+          }
+        });
+        createdTickets.push(ticket);
+      } catch (error: any) {
+        if (error.code === 'P2002') {
+           return NextResponse.json({ message: `Seat ${seat.row}${seat.number} was just booked by someone else!` }, { status: 409 });
+        }
+        throw error;
       }
-    });
+    }
 
-    return NextResponse.json({ ticket }, { status: 201 });
+    // We return the first ticket for the immediate view, though both are saved.
+    return NextResponse.json({ ticket: createdTickets[0], allTickets: createdTickets }, { status: 201 });
   } catch (error: any) {
     console.error("Ticket API Error:", error);
     return NextResponse.json({ message: error.message || "Failed to create ticket" }, { status: 500 });
