@@ -14,17 +14,22 @@ export async function POST(req: Request) {
     const { url } = await req.json();
     if (!url) return NextResponse.json({ error: "No URL provided" }, { status: 400 });
 
-    // 1. Scrape the URL
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    });
-    
-    if (!response.ok) throw new Error("Failed to fetch URL");
+    // 1. Scrape the URL (try our best, don't throw if it fails)
+    let html = "";
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      });
+      if (response.ok) {
+        html = await response.text();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch URL directly, continuing with empty HTML", err);
+    }
 
-    const html = await response.text();
     const $ = cheerio.load(html);
 
     const scrapedTitle = $('meta[property="og:title"]').attr("content") || $("title").text() || "";
@@ -47,16 +52,17 @@ export async function POST(req: Request) {
 
     // 2. Use Groq AI to structure and classify the data
     const prompt = `
-      I scraped a movie/TV show from the web.
+      I have a URL to a movie/TV show: "${url}"
+      And I scraped this data from the page:
       Raw Title: "${scrapedTitle}"
       Raw Description: "${scrapedDesc}"
 
-      Please extract the exact details and classify it.
+      Please extract the exact details and classify it. If the scraped data is empty, try to guess the movie title from the URL itself (e.g. from a slug).
       Return ONLY a raw JSON object with the following keys, without any markdown formatting or backticks:
-      - title (String: The clean title without "IMDb" or tags)
+      - title (String: The clean title without "IMDb" or tags. If unknown, leave empty string)
       - year (Number: Release year if found, otherwise null)
       - genre (String: Comma separated list of 1-3 best matching genres, e.g. "Action, Sci-Fi")
-      - description (String: Cleaned up description)
+      - description (String: Cleaned up description. If unknown, leave empty string)
       - rating (Number: If a rating out of 10 is mentioned, put it here, otherwise 0)
       - mediaType (String: MUST be one of "Movie", "TV Show", "Web Series", or "Anime")
       - seasons (Number: Total number of seasons if it's a show/series, otherwise null)
@@ -106,6 +112,16 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("Scraping error:", error);
-    return NextResponse.json({ error: error.message || "Failed to scrape movie" }, { status: 500 });
+    // Return empty fields instead of a hard 500 error so the UI form can still be edited
+    return NextResponse.json({ 
+      title: "",
+      description: "",
+      posterUrl: "",
+      genre: "Unknown",
+      year: null,
+      rating: 0,
+      mediaType: "Movie",
+      seasons: null,
+    });
   }
 }
