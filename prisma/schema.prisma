@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// NextAuth schema
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  // App specific
+  movies        Movie[]
+  tickets       Ticket[]
+  posts         Post[]
+  comments      Comment[]
+  friendshipsInitiated Friendship[] @relation("UserFriendshipsInitiated")
+  friendshipsReceived  Friendship[] @relation("UserFriendshipsReceived")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// WatchKnot Specific Models
+
+model Movie {
+  id          String   @id @default(cuid())
+  title       String
+  year        Int?
+  genre       String?
+  posterUrl   String?
+  rating      Float?
+  description String?
+  addedById   String
+  addedBy     User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  tickets     Ticket[]
+}
+
+model Ticket {
+  id           String   @id @default(cuid())
+  movieId      String
+  userId       String
+  message      String?
+  seatRow      String?
+  seatNumber   Int?
+  createdAt    DateTime @default(now())
+  
+  movie        Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  status    String   @default("PENDING") // PENDING, ACCEPTED
+  createdAt DateTime @default(now())
+  
+  user1     User     @relation("UserFriendshipsInitiated", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2     User     @relation("UserFriendshipsReceived", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@unique([user1Id, user2Id])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  privacy   String   @default("FRIENDS") // PUBLIC, FRIENDS, PRIVATE
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

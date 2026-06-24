@@ -1,34 +1,33 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-maroon: #800000;
+  --color-cream: #FFFDD0;
+  --color-text: #333333;
+  --color-bg: #FFFDD0;
+  --color-card: #ffffff;
+  --color-border: #e0d8b0;
+  --color-gingham: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(128, 0, 0, 0.05) 10px,
+    rgba(128, 0, 0, 0.05) 20px
+  );
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+[data-theme="dark"] {
+  --color-maroon: #ff6b6b;
+  --color-cream: #1a1a1a;
+  --color-text: #f0f0f0;
+  --color-bg: #121212;
+  --color-card: #1e1e1e;
+  --color-border: #333333;
+  --color-gingham: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 107, 107, 0.05) 10px,
+    rgba(255, 107, 107, 0.05) 20px
+  );
 }
 
 * {
@@ -37,13 +36,49 @@ body {
   margin: 0;
 }
 
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-inter), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .caveat {
+  font-family: var(--font-caveat), cursive;
+  color: var(--color-maroon);
+}
+
 a {
   color: inherit;
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+.cute-card {
+  background-color: var(--color-card);
+  border: 2px dashed var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 4px 4px 0px var(--color-maroon);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cute-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--color-maroon);
+}
+
+.btn-primary {
+  background-color: var(--color-maroon);
+  color: var(--color-cream);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
 }
