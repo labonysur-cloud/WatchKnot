@@ -50,6 +50,9 @@ model User {
   tickets       Ticket[]
   posts         Post[]
   comments      Comment[]
+  reactions     Reaction[]
+  blocksInitiated Block[] @relation("Blocker")
+  blocksReceived  Block[] @relation("Blocked")
   friendshipsInitiated Friendship[] @relation("UserFriendshipsInitiated")
   friendshipsReceived  Friendship[] @relation("UserFriendshipsReceived")
 }
@@ -80,6 +83,7 @@ model Movie {
   addedBy      User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   tickets      Ticket[]
+  posts        Post[]
 }
 
 model Ticket {
@@ -115,11 +119,40 @@ model Post {
   userId    String
   content   String
   ticketId  String?
-  privacy   String   @default("FRIENDS")
+  mediaUrl  String?  // Image or short video url
+  mediaType String?  // 'image' or 'video'
+  movieId   String?
+  privacy   String   @default("FRIENDS") // "ME", "FRIENDS", "PUBLIC"
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie     Movie?   @relation(fields: [movieId], references: [id], onDelete: SetNull)
   comments  Comment[]
+  reactions Reaction[]
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  type      String   // e.g., 'wow', 'care', 'like'
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
 }
 
 model Comment {

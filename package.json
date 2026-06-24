@@ -12,6 +12,7 @@
     "@prisma/client": "^5.22.0",
     "@uploadthing/react": "^7.3.3",
     "cheerio": "^1.2.0",
+    "date-fns": "^4.4.0",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.0.0",
     "framer-motion": "^12.41.0",
@@ -24,13 +25,15 @@
     "peerjs": "^1.5.5",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "uploadthing": "^7.7.4"
+    "uploadthing": "^7.7.4",
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "prisma": "^5.22.0",
