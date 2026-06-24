@@ -1,90 +1,195 @@
-:root {
-  --color-maroon: #800000;
-  --color-cream: #FFFDD0;
-  --color-text: #333333;
-  --color-bg: #FFFDD0;
-  --color-card: #ffffff;
-  --color-border: #e0d8b0;
-  --color-gingham: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    rgba(128, 0, 0, 0.05) 10px,
-    rgba(128, 0, 0, 0.05) 20px
-  );
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Nunito:wght@300;400;500;600;700&family=Caveat:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 10 40% 96%;
+    --foreground: 350 30% 18%;
+
+    --card: 10 45% 93%;
+    --card-foreground: 350 30% 18%;
+
+    --popover: 10 40% 96%;
+    --popover-foreground: 350 30% 18%;
+
+    --primary: 350 60% 42%;
+    --primary-foreground: 10 50% 97%;
+
+    --secondary: 10 50% 88%;
+    --secondary-foreground: 350 30% 18%;
+
+    --muted: 10 25% 90%;
+    --muted-foreground: 350 15% 45%;
+
+    --accent: 350 55% 55%;
+    --accent-foreground: 10 50% 97%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 350 30% 82%;
+    --input: 350 25% 84%;
+    --ring: 350 60% 42%;
+
+    --radius: 0.75rem;
+
+    --gold: 35 70% 52%;
+    --gold-foreground: 10 50% 97%;
+    --rose: 350 50% 65%;
+    --rose-foreground: 350 30% 18%;
+    --warm: 15 55% 50%;
+
+    --gingham: 350 60% 42%;
+
+    --sidebar-background: 10 45% 93%;
+    --sidebar-foreground: 350 30% 18%;
+    --sidebar-primary: 350 60% 42%;
+    --sidebar-primary-foreground: 10 50% 97%;
+    --sidebar-accent: 10 25% 90%;
+    --sidebar-accent-foreground: 350 30% 18%;
+    --sidebar-border: 350 30% 82%;
+    --sidebar-ring: 350 60% 42%;
+  }
+
+  .dark {
+    --background: 350 25% 8%;
+    --foreground: 10 30% 90%;
+
+    --card: 350 22% 12%;
+    --card-foreground: 10 30% 90%;
+
+    --popover: 350 25% 8%;
+    --popover-foreground: 10 30% 90%;
+
+    --primary: 350 55% 50%;
+    --primary-foreground: 10 50% 97%;
+
+    --secondary: 350 20% 18%;
+    --secondary-foreground: 10 30% 90%;
+
+    --muted: 350 15% 16%;
+    --muted-foreground: 10 15% 55%;
+
+    --accent: 350 50% 58%;
+    --accent-foreground: 10 50% 97%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 350 15% 20%;
+    --input: 350 15% 20%;
+    --ring: 350 55% 50%;
+
+    --gold: 35 70% 52%;
+    --gold-foreground: 10 50% 97%;
+    --rose: 350 45% 55%;
+    --rose-foreground: 10 30% 90%;
+    --warm: 15 55% 50%;
+
+    --gingham: 350 55% 50%;
+
+    --sidebar-background: 350 22% 12%;
+    --sidebar-foreground: 10 30% 90%;
+    --sidebar-primary: 350 55% 50%;
+    --sidebar-primary-foreground: 10 50% 97%;
+    --sidebar-accent: 350 15% 16%;
+    --sidebar-accent-foreground: 10 30% 90%;
+    --sidebar-border: 350 15% 20%;
+    --sidebar-ring: 350 55% 50%;
+  }
 }
 
-[data-theme="dark"] {
-  --color-maroon: #ff6b6b;
-  --color-cream: #1a1a1a;
-  --color-text: #f0f0f0;
-  --color-bg: #121212;
-  --color-card: #1e1e1e;
-  --color-border: #333333;
-  --color-gingham: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    rgba(255, 107, 107, 0.05) 10px,
-    rgba(255, 107, 107, 0.05) 20px
-  );
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* Gingham pattern background */
+.bg-gingham {
+  background-image:
+    linear-gradient(45deg, hsl(var(--gingham) / 0.12) 25%, transparent 25%),
+    linear-gradient(-45deg, hsl(var(--gingham) / 0.12) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, hsl(var(--gingham) / 0.12) 75%),
+    linear-gradient(-45deg, transparent 75%, hsl(var(--gingham) / 0.12) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-inter), sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  min-height: 100vh;
+/* Polka dot pattern */
+.bg-polka {
+  background-image: radial-gradient(circle, hsl(var(--rose) / 0.2) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
 }
 
-h1, h2, h3, h4, h5, h6, .caveat {
-  font-family: var(--font-caveat), cursive;
-  color: var(--color-maroon);
+/* Cute scallop border */
+.border-scallop {
+  --scallop-size: 10px;
+  mask-image: radial-gradient(circle at 50% 0%, transparent 35%, black 36%);
+  mask-size: var(--scallop-size) var(--scallop-size);
+  mask-position: 50% 100%;
+  mask-repeat: repeat-x;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+@layer utilities {
+  .text-gradient-gold {
+    background: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--warm)), hsl(var(--rose)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-ticket {
+    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--secondary)));
+    border: 2px dashed hsl(var(--accent));
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      hsl(var(--rose) / 0.15) 50%,
+      transparent 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  .font-handwritten {
+    font-family: 'Caveat', cursive;
+  }
 }
 
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Cute card hover effect */
 .cute-card {
-  background-color: var(--color-card);
-  border: 2px dashed var(--color-border);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 4px 4px 0px var(--color-maroon);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s ease;
 }
-
 .cute-card:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px var(--color-maroon);
-}
-
-.btn-primary {
-  background-color: var(--color-maroon);
-  color: var(--color-cream);
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  transform: translateY(-4px) rotate(-0.5deg);
+  box-shadow: 0 12px 32px -8px hsl(var(--primary) / 0.2);
 }

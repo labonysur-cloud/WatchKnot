@@ -1,144 +1,153 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Film, Home, User, LogOut, Moon, Sun, Menu, X, Plus, ShieldAlert, Download } from "lucide-react";
-import { useState, useEffect } from "react";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { usePathname } from "next/navigation";
+import { Film, Ticket, BookHeart, Home, Users, UserCircle, Moon, Sun, Menu, X, Heart, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 
+const links = [
+  { to: "/", label: "Home", icon: Home },
+  { to: "/movies", label: "Movies", icon: Film },
+  { to: "/tickets", label: "Tickets", icon: Ticket },
+  { to: "/feed", label: "Journal", icon: BookHeart }, // Feed corresponds to Journal
+  { to: "/users", label: "Friends", icon: Users }, // Users corresponds to Friends
+  { to: "/profile", label: "Profile", icon: UserCircle },
+];
+
 export default function Navbar() {
-  const { user } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, logOut } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  
+  // For now, no admin/ticket count logic until backend is ported
+  const sharedTicketCount = 0; 
+  const isAdmin = false; 
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push("/login");
-  };
-
-  const navLinks = [
-    { href: "/", label: "Home", icon: <Home size={18} /> },
-    { href: "/movies", label: "Movies", icon: <Film size={18} /> },
-    { href: "/downloads", label: "Downloads", icon: <Download size={18} /> },
-    { href: "/profile", label: "Profile", icon: <User size={18} /> },
-  ];
-
-  if (user?.email === "labonysur473@gmail.com") {
-    navLinks.push({ href: "/admin", label: "Admin", icon: <ShieldAlert size={18} /> });
-  }
-
-  const linkStyle = (href: string) => ({
-    display: "flex", alignItems: "center", gap: "6px",
-    padding: "8px 14px", borderRadius: "8px",
-    fontWeight: pathname === href ? "bold" : "normal" as any,
-    color: pathname === href ? "var(--color-maroon)" : "var(--color-text)",
-    backgroundColor: pathname === href ? "rgba(128,0,0,0.08)" : "transparent",
-    transition: "all 0.2s", fontSize: "0.95rem", textDecoration: "none",
-  });
-
-  if (!user) return null;
+  const navLinks = isAdmin ? [...links, { to: "/admin", label: "Admin", icon: ShieldCheck }] : links;
 
   return (
-    <nav style={{
-      position: "sticky", top: 0, zIndex: 100,
-      backgroundColor: "var(--color-card)",
-      borderBottom: "2px dashed var(--color-border)",
-      padding: "0 24px",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
-    }}>
-      <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
-
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-          <Film size={28} color="var(--color-maroon)" />
-          <span className="caveat" style={{ fontSize: "1.8rem", color: "var(--color-maroon)" }}>WatchKnot</span>
+    <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/95 border-b-2 border-primary/20 shadow-sm">
+      <div className="container mx-auto px-4 flex items-center justify-between h-14 sm:h-16">
+        <Link href="/" className="flex items-center gap-2 group">
+          <Heart className="w-5 h-5 text-primary fill-primary group-hover:scale-110 transition-transform" />
+          <span className="font-display text-lg sm:text-xl font-bold text-primary">
+            WatchKnot
+          </span>
+          <span className="text-xs font-handwritten text-rose hidden sm:inline">♡</span>
         </Link>
 
-        {/* Desktop Nav */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }} className="desktop-nav">
-          {user && navLinks.map(link => (
-            <Link key={link.href} href={link.href} style={linkStyle(link.href)}>
-              {link.icon} {link.label}
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-0.5">
+          {navLinks.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              href={to}
+              className={cn(
+                "relative flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all",
+                pathname === to
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{label}</span>
+              {to === "/tickets" && sharedTicketCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 animate-pulse">
+                  {sharedTicketCount}
+                </span>
+              )}
             </Link>
           ))}
-
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="ml-1 rounded-full hover:bg-primary/10"
+          >
+            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
           {user && (
-            <Link href="/movies/add" style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "8px 16px", borderRadius: "8px",
-              backgroundColor: "var(--color-maroon)", color: "white",
-              fontWeight: "bold", fontSize: "0.9rem", textDecoration: "none"
-            }}>
-              <Plus size={16} /> Add Movie
-            </Link>
-          )}
-
-          {mounted && (
-            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} style={{
-              background: "none", border: "1px solid var(--color-border)",
-              borderRadius: "8px", padding: "8px", cursor: "pointer",
-              color: "var(--color-text)", display: "flex", alignItems: "center"
-            }}>
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-          )}
-
-          {user ? (
-            <button onClick={handleSignOut} style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: "none", border: "1px solid var(--color-border)",
-              borderRadius: "8px", padding: "8px 14px", cursor: "pointer",
-              color: "var(--color-text)", fontSize: "0.9rem"
-            }}>
-              <LogOut size={16} /> Sign Out
-            </button>
-          ) : (
-            <Link href="/login" style={{
-              padding: "8px 20px", borderRadius: "8px",
-              backgroundColor: "var(--color-maroon)", color: "white",
-              fontWeight: "bold", fontSize: "0.9rem", textDecoration: "none"
-            }}>
-              Sign In
-            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={logOut}
+              className="ml-1 text-muted-foreground text-xs rounded-full"
+            >
+              Sign out
+            </Button>
           )}
         </div>
 
-        {/* Mobile */}
-        <button onClick={() => setMenuOpen(!menuOpen)} style={{
-          display: "none", background: "none", border: "none",
-          cursor: "pointer", color: "var(--color-text)"
-        }} className="mobile-menu-btn">
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile actions */}
+        <div className="flex md:hidden items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="h-9 w-9 rounded-full"
+          >
+            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="h-9 w-9 rounded-full relative"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {sharedTicketCount > 0 && !mobileOpen && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-0.5">
+                {sharedTicketCount}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {menuOpen && (
-        <div style={{ borderTop: "1px dashed var(--color-border)", padding: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          {user && navLinks.map(link => (
-            <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} style={{ ...linkStyle(link.href), display: "flex" }}>
-              {link.icon} {link.label}
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t-2 border-primary/10 bg-background/95 backdrop-blur-md px-4 pb-4 pt-2 space-y-1 bg-polka">
+          {navLinks.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              href={to}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                pathname === to
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+              {to === "/tickets" && sharedTicketCount > 0 && (
+                <span className="ml-auto min-w-[20px] h-[20px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                  {sharedTicketCount} 🎁
+                </span>
+              )}
             </Link>
           ))}
-          {user && <Link href="/movies/add" onClick={() => setMenuOpen(false)} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "8px", backgroundColor: "var(--color-maroon)", color: "white", fontWeight: "bold", textDecoration: "none" }}><Plus size={16} /> Add Movie</Link>}
-          {user && <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "8px", background: "none", border: "1px solid var(--color-border)", cursor: "pointer", color: "var(--color-text)", width: "100%" }}><LogOut size={16} /> Sign Out</button>}
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { logOut(); setMobileOpen(false); }}
+              className="w-full justify-start text-muted-foreground text-xs mt-2 rounded-xl"
+            >
+              Sign out
+            </Button>
+          )}
         </div>
       )}
-
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
-        }
-      `}</style>
     </nav>
   );
 }

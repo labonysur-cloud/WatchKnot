@@ -4,173 +4,313 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Film, Ticket, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { Film, Ticket, BookHeart, Popcorn, Heart, Play, Star, Users, Radio, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/lib/firebase";
 import { collection, query, limit, onSnapshot } from "firebase/firestore";
 
+const features = [
+  {
+    icon: Film,
+    title: "Movie Collection",
+    desc: "Save your favorites and build a shared watchlist with friends.",
+    to: "/movies",
+    emoji: "🎬",
+  },
+  {
+    icon: Ticket,
+    title: "Get Your Ticket",
+    desc: "AI-generated vintage tickets — grab one before each movie night!",
+    to: "/tickets",
+    emoji: "🎫",
+  },
+  {
+    icon: BookHeart,
+    title: "Movie Journal",
+    desc: "Write down your thoughts, feelings, and favorite moments.",
+    to: "/feed",
+    emoji: "📝",
+  },
+  {
+    icon: Users,
+    title: "Friends",
+    desc: "Connect with your movie crew and share tickets together.",
+    to: "/users",
+    emoji: "💕",
+  },
+];
+
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [playableMovies, setPlayableMovies] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [activeRooms, setActiveRooms] = useState<any[]>([]);
+  const [roomsLoading, setRoomsLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push("/login");
     } else if (user) {
       fetch("/api/movies/playable")
         .then(res => res.json())
-        .then(data => setPlayableMovies(data.movies || []))
+        .then(data => {
+          setPlayableMovies(data.movies || []);
+          setDataLoading(false);
+        })
         .catch(console.error);
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     if (!user) return;
-    // Listen to active watch rooms
     const q = query(collection(db, "watchRooms"), limit(6));
     const unsub = onSnapshot(q, (snapshot) => {
       const rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setActiveRooms(rooms);
+      setRoomsLoading(false);
     });
     return () => unsub();
   }, [user]);
 
-  if (loading || !user) {
+  if (authLoading || !user) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <Loader2 className="animate-spin" size={40} color="var(--color-maroon)" />
+      <div className="flex justify-center items-center h-screen bg-polka">
+        <Loader2 className="animate-spin text-primary w-10 h-10" />
       </div>
     );
   }
 
   return (
-    <main style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto", minHeight: "calc(100vh - 64px)" }}>
-      {/* Hero Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="cute-card" 
-        style={{ 
-          display: "flex", 
-          alignItems: "center", 
-          gap: "40px", 
-          marginBottom: "60px",
-          background: "var(--color-gingham)",
-          flexWrap: "wrap",
-          justifyContent: "center"
-        }}
-      >
-        <div style={{ flex: 1, minWidth: "300px", textAlign: "left" }}>
-          <h1 className="caveat" style={{ fontSize: "4.5rem", marginBottom: "10px", lineHeight: 1 }}>Welcome to WatchKnot</h1>
-          <p style={{ fontSize: "1.2rem", color: "var(--color-maroon)", marginBottom: "30px", fontWeight: 500 }}>
-            Hi {user.displayName || "Movie Lover"}! Grab some popcorn and log your favorite films in this cozy, vintage-aesthetic scrapbook.
-          </p>
-          <Link href="/movies">
-            <button className="btn-primary" style={{ fontSize: "1.2rem", padding: "14px 28px", display: "flex", alignItems: "center", gap: "10px" }}>
-              <Film size={20} /> Go to My Collection
-            </button>
-          </Link>
+    <div className="min-h-screen bg-polka">
+      {/* Hero */}
+      <section className="relative py-16 sm:py-28 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="/assets/hero-cinema.jpg"
+            alt="Cozy vintage cinema interior"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
+          <div className="absolute inset-0 bg-gingham opacity-10" />
         </div>
-        <motion.div 
-          initial={{ scale: 0.8, rotate: -5 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
-          style={{ width: "300px", height: "300px", borderRadius: "20px", overflow: "hidden", border: "4px solid var(--color-border)", backgroundColor: "var(--color-bg)", boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
-        >
-          <img src="/vintage-tv.png" alt="Vintage TV" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        </motion.div>
-      </motion.div>
 
-      {/* Active Watch Rooms Lobby */}
-      {activeRooms.length > 0 && (
-        <div style={{ marginBottom: "60px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", borderBottom: "2px dashed var(--color-border)", paddingBottom: "10px", marginBottom: "20px" }}>
-            <h2 className="caveat" style={{ fontSize: "3rem", margin: 0 }}>Live Watch Rooms</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-maroon)", color: "white", padding: "4px 10px", borderRadius: "12px", fontSize: "0.8rem", fontWeight: "bold" }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ffcccb", animation: "pulse 1.5s infinite" }} /> LIVE
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative z-10 text-center px-4 max-w-3xl"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
+            className="inline-flex items-center gap-2 bg-card/80 backdrop-blur-sm px-4 py-2 rounded-full mb-4 sm:mb-6 border-2 border-primary/20"
+          >
+            <Popcorn className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">Your cozy movie corner</span>
+            <Heart className="w-3 h-3 text-primary fill-primary" />
+          </motion.div>
+
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold mb-4 sm:mb-6 text-foreground leading-tight">
+            Watch Together,{" "}
+            <span className="text-gradient-gold">Feel Together</span>
+          </h1>
+          <p className="font-handwritten text-xl sm:text-2xl text-primary/70 mb-2">~ a love letter to movie nights ~</p>
+
+          <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
+            A cozy space for friends to share movie nights, collect tickets,
+            and journal beautiful memories — no matter the distance 💌
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <Button variant="default" size="lg" asChild className="shadow-lg bg-warm hover:bg-warm/90 text-white">
+              <Link href="/movies">
+                <Film className="w-4 h-4 mr-1" />
+                Browse Movies
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="rounded-full border-2 border-primary/30 hover:border-primary/60" asChild>
+              <Link href="/users">
+                <Heart className="w-4 h-4 mr-1" />
+                Find Friends
+              </Link>
+            </Button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
-            {activeRooms.map((room, i) => (
-              <motion.div key={room.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                <Link href={`/movies/${room.movieId}/room/${room.id}`} style={{ textDecoration: "none" }}>
-                  <div className="cute-card" style={{ display: "flex", flexDirection: "column", padding: "20px", cursor: "pointer", position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "4px", backgroundColor: "var(--color-maroon)" }} />
-                    <h3 style={{ margin: "0 0 10px 0", fontSize: "1.2rem", color: "var(--color-text)", fontWeight: "bold" }}>{room.movieTitle}</h3>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#888", fontSize: "0.9rem" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>Hosted by {room.hostName}</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-bg)", padding: "4px 8px", borderRadius: "8px", border: "1px solid var(--color-border)" }}>
-                        <Users size={14} /> {room.participants?.length || 1}
-                      </span>
-                    </div>
-                  </div>
+        </motion.div>
+      </section>
+
+      {/* Features */}
+      <section className="py-12 sm:py-20 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.h2
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-2 text-foreground"
+          >
+            How It Works
+          </motion.h2>
+          <p className="text-center font-handwritten text-lg sm:text-xl text-primary/60 mb-8 sm:mb-12">
+            Four simple steps to the coziest movie night ever ♡
+          </p>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <Link
+                  href={f.to}
+                  className="block group cute-card bg-card rounded-2xl p-4 sm:p-6 border-2 border-primary/10 hover:border-primary/30 h-full"
+                >
+                  <div className="text-2xl sm:text-3xl mb-2">{f.emoji}</div>
+                  <h3 className="font-display text-sm sm:text-lg font-semibold mb-1 sm:mb-1.5 text-foreground">{f.title}</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed hidden sm:block">{f.desc}</p>
                 </Link>
               </motion.div>
             ))}
           </div>
-          <style jsx>{`
-            @keyframes pulse {
-              0% { opacity: 1; }
-              50% { opacity: 0.5; }
-              100% { opacity: 1; }
-            }
-          `}</style>
         </div>
-      )}
+      </section>
 
-      {/* Watch Now Section */}
-      {playableMovies.length > 0 && (
-        <div style={{ marginBottom: "60px" }}>
-          <h2 className="caveat" style={{ fontSize: "3rem", marginBottom: "20px", borderBottom: "2px dashed var(--color-border)", paddingBottom: "10px" }}>Watch Now</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "20px" }}>
-            {playableMovies.map((movie, i) => (
-              <motion.div key={movie.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                <Link href={`/movies/${movie.id}`} style={{ textDecoration: "none" }}>
-                  <div className="cute-card" style={{ padding: "10px", textAlign: "center", cursor: "pointer" }}>
-                    <div style={{ width: "100%", aspectRatio: "2/3", backgroundColor: "var(--color-border)", borderRadius: "8px", overflow: "hidden", marginBottom: "10px" }}>
-                      {movie.posterUrl ? (
-                        <img src={movie.posterUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={movie.title} />
-                      ) : (
-                        <Film style={{ margin: "auto", height: "100%" }} color="#999" />
+      {/* Watch Now */}
+      {dataLoading ? (
+        <section className="py-12 sm:py-20 px-4 bg-secondary/30">
+          <div className="container mx-auto max-w-5xl">
+            <Skeleton className="h-10 w-48 mx-auto mb-4" />
+            <Skeleton className="h-5 w-64 mx-auto mb-12" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="aspect-[2/3] rounded-2xl" />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : playableMovies.length > 0 ? (
+        <section className="py-12 sm:py-20 px-4 bg-gingham bg-secondary/20">
+          <div className="container mx-auto max-w-5xl">
+            <motion.h2
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-3 sm:mb-4 text-foreground"
+            >
+              Watch Now 🎬
+            </motion.h2>
+            <p className="text-center font-handwritten text-lg text-primary/60 mb-8 sm:mb-12">
+              Movies you have tickets for — jump right in!
+            </p>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {playableMovies.map((movie, i) => (
+                <motion.div
+                  key={movie.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="group cursor-pointer"
+                  onClick={() => router.push(`/movies/${movie.id}`)}
+                >
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-primary/15 hover:border-primary/40 cute-card">
+                    <div className="aspect-[2/3] relative">
+                      <img
+                        src={movie.posterUrl || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=600&fit=crop"}
+                        alt={movie.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full bg-primary/90 flex items-center justify-center shadow-lg">
+                          <Play className="w-6 sm:w-7 h-6 sm:h-7 text-primary-foreground fill-primary-foreground ml-1" />
+                        </div>
+                      </div>
+                      {movie.rating > 0 && (
+                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-card/80 backdrop-blur-sm px-2 py-1 rounded-full border border-primary/20">
+                          <Star className="w-3 h-3 text-gold fill-gold" />
+                          <span className="text-xs font-bold text-foreground">{movie.rating}</span>
+                        </div>
                       )}
                     </div>
-                    <h3 className="caveat" style={{ fontSize: "1.2rem", margin: 0, color: "var(--color-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{movie.title}</h3>
+                    <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+                      <h3 className="font-display text-base sm:text-lg font-semibold text-foreground">{movie.title}</h3>
+                      <p className="text-xs text-muted-foreground">{movie.genre} · {movie.year}</p>
+                    </div>
                   </div>
-                </Link>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
+      ) : null}
+
+      {/* Active Watch Rooms */}
+      {!roomsLoading && activeRooms.length > 0 && (
+        <section className="py-12 sm:py-20 px-4">
+          <div className="container mx-auto max-w-5xl">
+            <motion.h2
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-3 sm:mb-4 text-foreground"
+            >
+              Live Now <Radio className="inline w-5 sm:w-6 h-5 sm:h-6 text-primary animate-pulse" />
+            </motion.h2>
+            <p className="text-center font-handwritten text-lg text-primary/60 mb-8 sm:mb-12">
+              Friends are watching — jump in and join them!
+            </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {activeRooms.map((room, i) => (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <Link
+                    href={`/movies/${room.movieId}/room/${room.id}`}
+                    className="block group cute-card bg-card rounded-2xl p-4 sm:p-5 border-2 border-primary/10 hover:border-primary/30"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-display text-base sm:text-lg font-semibold text-foreground truncate flex-1 min-w-0">
+                        {room.movieTitle}
+                      </h3>
+                      <Badge variant="secondary" className="ml-2 shrink-0 rounded-full">
+                        <Users className="w-3 h-3 mr-1" />
+                        {room.participants?.length || 1}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-sm text-muted-foreground">Watching now</span>
+                    </div>
+                    <div className="mt-3 flex items-center gap-1 text-sm text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Play className="w-4 h-4" />
+                      Join room
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* Features Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "24px" }}>
-        {[
-          { icon: <Film size={32} />, title: "Movie Journals", desc: "Collect your favorite movies and write personalized, cute journal entries for each one." },
-          { icon: <Ticket size={32} />, title: "Digital Tickets", desc: "Book beautifully crafted vintage digital movie tickets complete with personal messages." },
-          { icon: <Users size={32} />, title: "Watch Together", desc: "Sync your screen with friends in perfectly timed real-time watch rooms." },
-          { icon: <Sparkles size={32} />, title: "Aesthetic Vibe", desc: "Wrapped in a warm maroon and cream color palette with handwritten Caveat typography." }
-        ].map((feature, i) => (
-          <motion.div 
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + (i * 0.1) }}
-            className="cute-card"
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}
-          >
-            <div style={{ color: "var(--color-maroon)", marginBottom: "16px", backgroundColor: "var(--color-bg)", padding: "16px", borderRadius: "50%", border: "2px dashed var(--color-border)" }}>
-              {feature.icon}
-            </div>
-            <h2 className="caveat" style={{ fontSize: "2rem", marginBottom: "10px" }}>{feature.title}</h2>
-            <p style={{ color: "var(--color-text)", opacity: 0.8 }}>{feature.desc}</p>
-          </motion.div>
-        ))}
-      </div>
-    </main>
+      <footer className="border-t-2 border-primary/10 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm bg-gingham">
+        <p>Made with <Heart className="w-3 h-3 inline text-primary fill-primary" /> for movie nights with friends</p>
+        <p className="font-handwritten text-primary/50 mt-1">~ WatchKnot ♡ ~</p>
+      </footer>
+    </div>
   );
 }

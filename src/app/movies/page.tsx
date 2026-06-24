@@ -1,168 +1,492 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Film, X, Star, ExternalLink, Play, Ticket, Users, Wand2, Loader2, Trash2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Film, Star, Plus, Loader2, Calendar, Clapperboard, Edit2 } from "lucide-react";
-import Link from "next/link";
-import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
-export default function MoviesPage() {
+function getMoviePoster(posterUrl: string): string {
+  return posterUrl || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=600&fit=crop";
+}
+
+const GENRES = ["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Fantasy", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "Western"];
+
+export default function Movies() {
   const { user, loading: authLoading, getToken } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: "", genre: "", year: "", description: "", posterUrl: "", watchUrl: "", embedUrl: "", rating: "", totalSeasons: "" });
+  const [autofilling, setAutofilling] = useState(false);
+  const [linkInput, setLinkInput] = useState("");
+
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", genre: "", year: "", description: "", posterUrl: "", embedUrl: "", rating: "", totalSeasons: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
     if (!authLoading && user) fetchMovies();
-  }, [user, authLoading]);
+  }, [user, authLoading, router]);
 
   const fetchMovies = async () => {
-    const token = await getToken();
-    const res = await fetch("/api/movies", { headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) {
-      const data = await res.json();
-      setMovies(data.movies || []);
-    }
-    setLoading(false);
-  };
-
-  const [editingMovie, setEditingMovie] = useState<any>(null);
-  const [editLoading, setEditLoading] = useState(false);
-  const GENRES = ["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Fantasy", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "Western"];
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEditLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch(`/api/movies/${editingMovie.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(editingMovie),
-      });
+      const res = await fetch("/api/movies", { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
-        setMovies(movies.map((m) => (m.id === editingMovie.id ? editingMovie : m)));
-        setEditingMovie(null);
+        const data = await res.json();
+        setMovies(data.movies || []);
       }
     } catch (err) {
       console.error(err);
     } finally {
-      setEditLoading(false);
+      setLoading(false);
     }
   };
 
-  const inputStyle = { width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid var(--color-border)", outline: "none", backgroundColor: "var(--color-bg)", color: "var(--color-text)", marginBottom: "12px" };
+  const isUrl = (str: string) => /^https?:\/\//i.test(str.trim()) || /^www\./i.test(str.trim());
+
+  const handleSmartAutoFill = async () => {
+    const input = linkInput.trim();
+    if (!input) return;
+    setAutofilling(true);
+    try {
+      const isLink = isUrl(input);
+      const token = await getToken();
+      
+      const res = await fetch("/api/movies/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ url: isLink ? input : `https://google.com/search?q=${encodeURIComponent(input)}+movie` }),
+      });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server timeout or unexpected response.");
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to scrape");
+
+      setForm((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        genre: GENRES.includes(data.genre) ? data.genre : prev.genre,
+        year: data.year ? String(data.year) : prev.year,
+        description: data.description || prev.description,
+        rating: data.rating ? String(data.rating) : prev.rating,
+        posterUrl: data.posterUrl || prev.posterUrl,
+        embedUrl: data.embedUrl || (isLink ? input : "") || prev.embedUrl,
+        totalSeasons: data.totalSeasons ? String(data.totalSeasons) : prev.totalSeasons,
+      }));
+      setShowForm(true);
+      toast({ title: "✨ Found it!", description: `Filled in details for "${data.title || input}"` });
+    } catch (err: any) {
+      toast({ title: "Couldn't identify", description: err.message || "Try entering details manually", variant: "destructive" });
+      if (!isUrl(input)) {
+        setForm((prev) => ({ ...prev, title: input }));
+      }
+      setShowForm(true);
+    }
+    setAutofilling(false);
+  };
+
+  const handleAdd = async () => {
+    if (!form.title) return;
+    try {
+      const token = await getToken();
+      const payload = {
+        title: form.title,
+        genre: form.genre || "Movie",
+        year: form.year || new Date().getFullYear().toString(),
+        description: form.description || undefined,
+        posterUrl: form.posterUrl || undefined,
+        watch_url: form.watchUrl || undefined,
+        embed_url: form.embedUrl || undefined,
+        rating: form.rating ? parseFloat(form.rating) : undefined,
+        total_seasons: form.totalSeasons ? parseInt(form.totalSeasons) : undefined,
+      };
+
+      const res = await fetch("/api/movies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to add movie");
+      toast({ title: "Added!", description: `"${form.title}" is now in your collection.` });
+      
+      setForm({ title: "", genre: "", year: "", description: "", posterUrl: "", watchUrl: "", embedUrl: "", rating: "", totalSeasons: "" });
+      setLinkInput("");
+      setShowForm(false);
+      fetchMovies();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const deleteMovie = async (id: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/movies/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setMovies(movies.filter((m) => m.id !== id));
+        toast({ title: "Deleted", description: "Movie removed from collection." });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const openEdit = (m: any) => {
+    setEditing(m);
+    setEditForm({
+      title: m.title || "",
+      genre: m.genre || "",
+      year: m.year ? String(m.year) : "",
+      description: m.description || "",
+      posterUrl: m.posterUrl || "",
+      embedUrl: m.embed_url || "",
+      rating: m.rating ? String(m.rating) : "",
+      totalSeasons: m.total_seasons ? String(m.total_seasons) : "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editing) return;
+    setSavingEdit(true);
+    try {
+      const token = await getToken();
+      const payload = {
+        ...editing,
+        title: editForm.title,
+        genre: editForm.genre || "Movie",
+        year: editForm.year,
+        description: editForm.description || null,
+        posterUrl: editForm.posterUrl || null,
+        embed_url: editForm.embedUrl || null,
+        rating: editForm.rating ? parseFloat(editForm.rating) : null,
+        total_seasons: editForm.totalSeasons ? parseInt(editForm.totalSeasons) : null,
+      };
+
+      const res = await fetch(`/api/movies/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setMovies(movies.map((m) => (m.id === editing.id ? payload : m)));
+        setEditing(null);
+        toast({ title: "Saved", description: "Movie details updated." });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   if (authLoading || loading) {
-    return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}><Loader2 className="animate-spin" size={40} color="var(--color-maroon)" /></div>;
+    return <div className="flex justify-center items-center h-[60vh]"><Loader2 className="animate-spin w-10 h-10 text-primary" /></div>;
   }
 
   return (
-    <div style={{ minHeight: "calc(100vh - 64px)", padding: "40px 20px", backgroundColor: "var(--color-bg)" }}>
-      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", flexWrap: "wrap", gap: "16px" }}>
+    <div className="min-h-screen py-8 sm:py-12 px-4">
+      <div className="container mx-auto max-w-6xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8 sm:mb-10">
           <div>
-            <h1 className="caveat" style={{ fontSize: "3.5rem", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}><Clapperboard size={44} color="var(--color-maroon)" /> My Movies</h1>
-            <p style={{ color: "#888", marginTop: "4px" }}>{movies.length} film{movies.length !== 1 ? "s" : ""} in your collection</p>
+            <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">Our Movies</h1>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">The collection we're building together 🍿</p>
           </div>
-          <Link href="/movies/add" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", borderRadius: "12px", backgroundColor: "var(--color-maroon)", color: "white", fontWeight: "bold", fontSize: "1rem", textDecoration: "none" }}>
-            <Plus size={20} /> Add Movie
-          </Link>
         </div>
 
+        <AnimatePresence>
+          {!showForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mb-8 sm:mb-10"
+            >
+              <div className="bg-card rounded-2xl p-4 sm:p-6 border-2 border-primary/10 max-w-lg mx-auto text-center">
+                <h3 className="font-display text-lg font-semibold text-foreground mb-1">Add a movie ♡</h3>
+                <p className="text-sm text-muted-foreground mb-4">Paste a link or type a title — AI will figure out the rest!</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Paste a movie link or type a title..."
+                    value={linkInput}
+                    onChange={(e) => setLinkInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSmartAutoFill()}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="default"
+                    onClick={handleSmartAutoFill}
+                    disabled={autofilling || !linkInput.trim()}
+                    className="bg-warm text-white hover:bg-warm/90"
+                  >
+                    {autofilling ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="text-xs text-muted-foreground hover:text-primary mt-3 underline underline-offset-2"
+                >
+                  Or add manually
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Editable Movie Form */}
+        <AnimatePresence>
+          {showForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mb-8 sm:mb-10"
+            >
+              <div className="bg-card rounded-2xl p-4 sm:p-6 border-2 border-primary/10 space-y-4 max-w-lg mx-auto">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-lg font-semibold text-foreground">Movie details</h3>
+                  <Button variant="ghost" size="icon" onClick={() => { setShowForm(false); setForm({ title: "", genre: "", year: "", description: "", posterUrl: "", watchUrl: "", embedUrl: "", rating: "", totalSeasons: "" }); }}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                {form.posterUrl && (
+                  <div className="flex justify-center">
+                    <img src={form.posterUrl} alt={form.title} className="h-32 rounded-xl object-cover border-2 border-primary/10 shadow-md" />
+                  </div>
+                )}
+                <Input placeholder="Movie or show title *" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                <div className="grid grid-cols-2 gap-3">
+                  <select 
+                    value={form.genre} 
+                    onChange={(e) => setForm({ ...form, genre: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  >
+                    <option value="">Genre</option>
+                    {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                  <Input placeholder="Year" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input placeholder="Rating (e.g. 8.5)" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} />
+                  <Input placeholder="Poster image URL" value={form.posterUrl} onChange={(e) => setForm({ ...form, posterUrl: e.target.value })} />
+                </div>
+                <Input placeholder="Watch / Embed URL (optional)" value={form.embedUrl} onChange={(e) => setForm({ ...form, embedUrl: e.target.value })} />
+                <Textarea placeholder="Short description..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <Button variant="default" onClick={handleAdd} disabled={!form.title} className="w-full bg-warm text-white hover:bg-warm/90">
+                  <Film className="w-4 h-4 mr-1" />
+                  Add to Collection
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Movie Grid */}
         {movies.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 20px" }}>
-            <Film size={80} color="var(--color-border)" style={{ marginBottom: "20px" }} />
-            <h2 className="caveat" style={{ fontSize: "2.5rem", marginBottom: "12px" }}>Your collection is empty!</h2>
-            <p style={{ color: "#888", marginBottom: "30px" }}>Start adding movies you've watched.</p>
-            <Link href="/movies/add" className="btn-primary" style={{ padding: "14px 32px", fontSize: "1.1rem", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-              <Plus size={20} /> Add Your First Movie
-            </Link>
+          <div className="text-center py-20">
+            <Film className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
+            <h2 className="font-display text-2xl font-semibold mb-2">No movies yet...</h2>
+            <p className="text-muted-foreground mb-6">Add your first movie to get started! 🎬</p>
+            <Button variant="default" onClick={() => setShowForm(true)} className="bg-warm text-white hover:bg-warm/90">
+              <Plus className="w-4 h-4 mr-1" /> Add Movie
+            </Button>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "24px" }}>
-            {movies.map((movie, i) => (
-              <motion.div key={movie.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="cute-card group" style={{ padding: 0, overflow: "hidden", cursor: "pointer", position: "relative" }}>
-                <div onClick={() => router.push(`/movies/${movie.id}`)}>
-                  <div style={{ width: "100%", aspectRatio: "2/3", backgroundColor: "#e0d8b0", position: "relative", overflow: "hidden" }}>
-                    {movie.posterUrl ? (
-                      <img src={movie.posterUrl} alt={movie.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}><Film size={40} color="#999" /></div>
-                    )}
-                    {movie.genre && (
-                      <span style={{ position: "absolute", top: "8px", left: "8px", backgroundColor: "var(--color-maroon)", color: "white", padding: "3px 10px", borderRadius: "20px", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10 }}>{movie.genre}</span>
-                    )}
-                  </div>
-                  <div style={{ padding: "14px" }}>
-                    <h3 className="caveat" style={{ fontSize: "1.2rem", margin: "0 0 6px 0", lineHeight: 1.2 }}>{movie.title}</h3>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      {movie.year && <span style={{ fontSize: "0.8rem", color: "#888", display: "flex", alignItems: "center", gap: "3px" }}><Calendar size={11} />{movie.year}</span>}
-                      {movie.rating && <span style={{ fontSize: "0.8rem", color: "#f59e0b", display: "flex", alignItems: "center", gap: "3px" }}><Star size={11} fill="#f59e0b" />{movie.rating}</span>}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {movies.map((movie, i) => {
+              return (
+                <motion.div
+                  key={movie.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className="group"
+                >
+                  <div className="bg-card rounded-2xl border border-border overflow-hidden hover:border-accent hover:shadow-lg transition-all relative">
+                    <div 
+                      className="aspect-[2/3] relative overflow-hidden cursor-pointer"
+                      onClick={() => router.push(`/movies/${movie.id}`)}
+                    >
+                      <img
+                        src={getMoviePoster(movie.posterUrl)}
+                        alt={movie.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+                      
+                      {movie.rating > 0 && (
+                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-card/80 backdrop-blur-sm px-2 py-1 rounded-full">
+                          <Star className="w-3 h-3 text-accent fill-accent" />
+                          <span className="text-xs font-bold text-foreground">{movie.rating}</span>
+                        </div>
+                      )}
+
+                      {(user?.uid === movie.addedById) && (
+                        <div className="absolute top-3 left-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEdit(movie); }}
+                            className="p-1.5 rounded-full bg-card/80 backdrop-blur-sm border border-border hover:bg-primary hover:text-primary-foreground transition-all"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1.5 rounded-full bg-card/80 backdrop-blur-sm border border-border hover:bg-destructive hover:text-destructive-foreground transition-all"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete "{movie.title}"?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will remove the movie from the collection. This action can't be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deleteMovie(movie.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+
+                      <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                        <span className="text-xs bg-accent/90 text-accent-foreground px-2 py-1 rounded-full font-medium">
+                          {movie.genre}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 sm:p-4">
+                      <h3 className="font-display text-base sm:text-lg font-semibold text-foreground truncate">{movie.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2 min-h-[40px]">{movie.description}</p>
+                      <div className="flex items-center justify-between mt-2 sm:mt-3 text-xs text-muted-foreground">
+                        <span>{movie.year}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Edit Button overlay */}
-                {user?.uid === movie.addedById && (
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setEditingMovie(movie); }} 
-                    style={{ position: "absolute", top: "8px", right: "8px", background: "white", border: "none", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.2)", zIndex: 20 }}
-                  >
-                    <Edit2 size={16} color="var(--color-maroon)" />
-                  </button>
-                )}
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         )}
-
-        {/* Edit Dialog */}
-        {editingMovie && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="cute-card" style={{ width: "100%", maxWidth: "500px", padding: "30px", backgroundColor: "var(--color-bg)", maxHeight: "90vh", overflowY: "auto" }}>
-              <h2 className="caveat" style={{ fontSize: "2rem", marginBottom: "20px", marginTop: 0 }}>Edit Movie</h2>
-              <form onSubmit={handleEdit}>
-                <label style={{ fontWeight: "bold", fontSize: "0.9rem" }}>Title</label>
-                <input type="text" value={editingMovie.title} onChange={e => setEditingMovie({ ...editingMovie, title: e.target.value })} required style={inputStyle} />
-                
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div>
-                    <label style={{ fontWeight: "bold", fontSize: "0.9rem" }}>Year</label>
-                    <input type="number" value={editingMovie.year || ""} onChange={e => setEditingMovie({ ...editingMovie, year: Number(e.target.value) })} style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: "bold", fontSize: "0.9rem" }}>Rating</label>
-                    <input type="number" step="0.1" value={editingMovie.rating || ""} onChange={e => setEditingMovie({ ...editingMovie, rating: Number(e.target.value) })} style={inputStyle} />
-                  </div>
-                </div>
-
-                <label style={{ fontWeight: "bold", fontSize: "0.9rem" }}>Genre</label>
-                <select value={editingMovie.genre || ""} onChange={e => setEditingMovie({ ...editingMovie, genre: e.target.value })} style={{ ...inputStyle, appearance: "none" as any }}>
-                  <option value="">Select a genre...</option>
-                  {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-
-                <label style={{ fontWeight: "bold", fontSize: "0.9rem" }}>Poster URL</label>
-                <input type="url" value={editingMovie.posterUrl || ""} onChange={e => setEditingMovie({ ...editingMovie, posterUrl: e.target.value })} style={inputStyle} />
-
-                <label style={{ fontWeight: "bold", fontSize: "0.9rem" }}>Description</label>
-                <textarea value={editingMovie.description || ""} onChange={e => setEditingMovie({ ...editingMovie, description: e.target.value })} rows={3} style={{ ...inputStyle, resize: "vertical" as any }} />
-
-                <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
-                  <button type="button" onClick={() => setEditingMovie(null)} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid var(--color-border)", backgroundColor: "transparent", cursor: "pointer", fontWeight: "bold" }}>Cancel</button>
-                  <button type="submit" disabled={editLoading} className="btn-primary" style={{ flex: 1, padding: "12px", borderRadius: "8px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    {editLoading ? <Loader2 size={18} className="animate-spin" /> : "Save Changes"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-primary" /> Edit movie details
+            </DialogTitle>
+            <DialogDescription>
+              Touch up the title, poster, link or any detail — changes are saved to the shared shelf. ♡
+            </DialogDescription>
+          </DialogHeader>
+
+          {editForm.posterUrl && (
+            <div className="flex justify-center">
+              <img
+                src={editForm.posterUrl}
+                alt={editForm.title}
+                className="h-32 rounded-xl object-cover border-2 border-primary/10 shadow-md"
+              />
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <Input
+              placeholder="Movie or show title *"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <select 
+                value={editForm.genre} 
+                onChange={(e) => setEditForm({ ...editForm, genre: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+              >
+                <option value="">Genre</option>
+                {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+              <Input placeholder="Year" value={editForm.year} onChange={(e) => setEditForm({ ...editForm, year: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input placeholder="Rating (e.g. 8.5)" value={editForm.rating} onChange={(e) => setEditForm({ ...editForm, rating: e.target.value })} />
+              <Input placeholder="Total seasons (optional)" value={editForm.totalSeasons} onChange={(e) => setEditForm({ ...editForm, totalSeasons: e.target.value })} />
+            </div>
+            <Input
+              placeholder="Poster image URL"
+              value={editForm.posterUrl}
+              onChange={(e) => setEditForm({ ...editForm, posterUrl: e.target.value })}
+            />
+            <Input
+              placeholder="Watch / Embed URL"
+              value={editForm.embedUrl}
+              onChange={(e) => setEditForm({ ...editForm, embedUrl: e.target.value })}
+            />
+            <Textarea
+              placeholder="Short description..."
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)} disabled={savingEdit}>
+              Cancel
+            </Button>
+            <Button variant="default" className="bg-warm text-white hover:bg-warm/90" onClick={handleSaveEdit} disabled={savingEdit || !editForm.title}>
+              {savingEdit ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Film className="w-4 h-4 mr-1" />}
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
