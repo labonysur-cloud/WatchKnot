@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const user = await getAuthUser(req);
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  const { title, year, genre, posterUrl, rating, description } = await req.json();
+  const { title, year, genre, posterUrl, rating, description, mediaType, seasons } = await req.json();
   if (!title) return NextResponse.json({ message: "Title is required" }, { status: 400 });
 
   // Ensure user exists in DB
@@ -36,6 +36,8 @@ export async function POST(req: Request) {
       posterUrl: posterUrl || null,
       rating: rating ? parseFloat(rating) : null,
       description: description || null,
+      mediaType: mediaType || null,
+      seasons: seasons ? parseInt(seasons) : null,
       addedById: user.uid,
     },
   });

@@ -65,17 +65,21 @@ model VerificationToken {
 // WatchKnot Specific Models
 
 model Movie {
-  id          String   @id @default(cuid())
-  title       String
-  year        Int?
-  genre       String?
-  posterUrl   String?
-  rating      Float?
-  description String?
-  addedById   String
-  addedBy     User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  tickets     Ticket[]
+  id           String   @id @default(cuid())
+  title        String
+  year         Int?
+  genre        String?
+  posterUrl    String?
+  rating       Float?
+  description  String?
+  mediaType    String?  // Movie, TV Show, Web Series, Anime
+  seasons      Int?     // For TV shows
+  videoUrl     String?  // For the embedded media player
+  languageNote String?  // Hindi Dubbed, Bengali Subs, etc.
+  addedById    String
+  addedBy      User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  tickets      Ticket[]
 }
 
 model Ticket {

@@ -40,6 +40,8 @@ export async function POST(req: Request) {
         year: new Date().getFullYear(),
         genre: "Unknown",
         rating: 0,
+        mediaType: "Movie",
+        seasons: null,
       });
     }
 
@@ -56,6 +58,8 @@ export async function POST(req: Request) {
       - genre (String: Comma separated list of 1-3 best matching genres, e.g. "Action, Sci-Fi")
       - description (String: Cleaned up description)
       - rating (Number: If a rating out of 10 is mentioned, put it here, otherwise 0)
+      - mediaType (String: MUST be one of "Movie", "TV Show", "Web Series", or "Anime")
+      - seasons (Number: Total number of seasons if it's a show/series, otherwise null)
     `;
 
     const chatCompletion = await groq.chat.completions.create({
@@ -82,6 +86,8 @@ export async function POST(req: Request) {
         genre: parsed.genre || "Unknown",
         description: parsed.description || scrapedDesc,
         rating: parsed.rating || 0,
+        mediaType: parsed.mediaType || "Movie",
+        seasons: parsed.seasons || null,
         posterUrl: scrapedImage,
       });
     } catch (parseError) {
@@ -93,6 +99,8 @@ export async function POST(req: Request) {
         genre: "Unknown",
         year: null,
         rating: 0,
+        mediaType: "Movie",
+        seasons: null,
       });
     }
 

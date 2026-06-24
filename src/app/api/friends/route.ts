@@ -47,6 +47,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Friend request sent" });
   }
 
+  if (action === "ADD_BY_ID") {
+    const target = await prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!target) return NextResponse.json({ message: "User not found" }, { status: 404 });
+    if (target.id === user.uid) return NextResponse.json({ message: "Cannot add yourself" }, { status: 400 });
+
+    const existing = await prisma.friendship.findFirst({
+      where: { OR: [{ user1Id: user.uid, user2Id: target.id }, { user1Id: target.id, user2Id: user.uid }] },
+    });
+    if (existing) return NextResponse.json({ message: "Request already exists" }, { status: 400 });
+
+    await prisma.friendship.create({ data: { user1Id: user.uid, user2Id: target.id, status: "PENDING" } });
+    return NextResponse.json({ message: "Friend request sent" });
+  }
+
   if (action === "ACCEPT") {
     await prisma.friendship.updateMany({
       where: { user1Id: targetUserId, user2Id: user.uid, status: "PENDING" },
@@ -56,4 +70,40 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ message: "Invalid action" }, { status: 400 });
+}
+
+export async function DELETE(req: Request) {
+  const user = await getAuthUser(req);
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const targetUserId = searchParams.get("id");
+
+    if (!targetUserId) {
+      return NextResponse.json({ message: "Invalid target user" }, { status: 400 });
+    }
+
+    const existing = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { user1Id: user.uid, user2Id: targetUserId },
+          { user1Id: targetUserId, user2Id: user.uid },
+        ],
+      },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ message: "Friendship not found" }, { status: 404 });
+    }
+
+    await prisma.friendship.delete({
+      where: { id: existing.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting friendship:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  }
 }

@@ -7,7 +7,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { title, year, genre, posterUrl, rating, description } = await req.json();
+  const { title, year, genre, posterUrl, rating, description, mediaType, seasons, videoUrl, languageNote } = await req.json();
 
   if (!title) return NextResponse.json({ message: "Title is required" }, { status: 400 });
 
@@ -26,6 +26,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       posterUrl: posterUrl || null,
       rating: rating ? parseFloat(rating) : null,
       description: description || null,
+      mediaType: mediaType || null,
+      seasons: seasons ? parseInt(seasons) : null,
+      videoUrl: videoUrl || null,
+      languageNote: languageNote || null,
     },
   });
 

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Film, Ticket, Users, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
@@ -11,9 +11,16 @@ export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const [playableMovies, setPlayableMovies] = useState<any[]>([]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
+    } else if (user) {
+      fetch("/api/movies/playable")
+        .then(res => res.json())
+        .then(data => setPlayableMovies(data.movies || []))
+        .catch(console.error);
     }
   }, [user, loading, router]);
 
@@ -63,6 +70,31 @@ export default function Home() {
           <img src="/vintage-tv.png" alt="Vintage TV" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </motion.div>
       </motion.div>
+
+      {/* Watch Now Section */}
+      {playableMovies.length > 0 && (
+        <div style={{ marginBottom: "60px" }}>
+          <h2 className="caveat" style={{ fontSize: "3rem", marginBottom: "20px", borderBottom: "2px dashed var(--color-border)", paddingBottom: "10px" }}>Watch Now</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "20px" }}>
+            {playableMovies.map((movie, i) => (
+              <motion.div key={movie.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+                <Link href={`/movies/${movie.id}`} style={{ textDecoration: "none" }}>
+                  <div className="cute-card" style={{ padding: "10px", textAlign: "center", cursor: "pointer" }}>
+                    <div style={{ width: "100%", aspectRatio: "2/3", backgroundColor: "var(--color-border)", borderRadius: "8px", overflow: "hidden", marginBottom: "10px" }}>
+                      {movie.posterUrl ? (
+                        <img src={movie.posterUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={movie.title} />
+                      ) : (
+                        <Film style={{ margin: "auto", height: "100%" }} color="#999" />
+                      )}
+                    </div>
+                    <h3 className="caveat" style={{ fontSize: "1.2rem", margin: 0, color: "var(--color-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{movie.title}</h3>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Features Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "24px" }}>
