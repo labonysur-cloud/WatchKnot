@@ -6,6 +6,8 @@ import { getAuthUser } from "@/lib/getAuthUser";
 // Initialize Groq (ensure GROQ_API_KEY is in .env)
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
+export const maxDuration = 60; // Maximize Vercel timeout allowance
+
 export async function POST(req: Request) {
   try {
     const user = await getAuthUser(req);
@@ -18,7 +20,7 @@ export async function POST(req: Request) {
     let html = "";
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5 second timeout to avoid Vercel 10s kill
       
       const response = await fetch(url, {
         signal: controller.signal,
