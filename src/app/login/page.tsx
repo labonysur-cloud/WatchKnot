@@ -9,17 +9,28 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [regData, setRegData] = useState({ name: "", email: "", password: "" });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/");
+    }
+  }, [user, authLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +78,25 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
+      await fetch("/api/user/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: result.user.displayName, email: result.user.email, uid: result.user.uid }),
+      });
+      router.push("/");
+    } catch (err: any) {
+      setError("Google sign in failed. Please try again.");
+      setLoading(false);
+    }
+  };
+
   const cardStyle = {
     position: "absolute" as const,
     width: "100%",
@@ -86,6 +116,8 @@ export default function LoginPage() {
     color: "var(--color-text)",
     fontSize: "1rem",
   };
+
+  if (authLoading || user) return null; // Or a simple loader, but keeping it invisible is fine during fast redirects
 
   return (
     <div style={{
@@ -119,6 +151,15 @@ export default function LoginPage() {
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary" style={{ padding: "13px", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "6px" }}>
                   {loading ? <><Loader2 size={18} className="animate-spin" /> Signing in...</> : "Sign In"}
+                </button>
+                <div style={{ display: "flex", alignItems: "center", margin: "4px 0" }}>
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "var(--color-border)" }}></div>
+                  <span style={{ padding: "0 10px", fontSize: "0.85rem", color: "#888" }}>OR</span>
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "var(--color-border)" }}></div>
+                </div>
+                <button type="button" onClick={handleGoogleLogin} disabled={loading} className="btn-primary" style={{ padding: "12px", fontSize: "1rem", backgroundColor: "white", color: "#333", border: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: "20px", height: "20px" }} />
+                  Continue with Google
                 </button>
               </form>
 
@@ -154,6 +195,15 @@ export default function LoginPage() {
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary" style={{ padding: "13px", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "6px" }}>
                   {loading ? <><Loader2 size={18} className="animate-spin" /> Creating...</> : "Create Account"}
+                </button>
+                <div style={{ display: "flex", alignItems: "center", margin: "4px 0" }}>
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "var(--color-border)" }}></div>
+                  <span style={{ padding: "0 10px", fontSize: "0.85rem", color: "#888" }}>OR</span>
+                  <div style={{ flex: 1, height: "1px", backgroundColor: "var(--color-border)" }}></div>
+                </div>
+                <button type="button" onClick={handleGoogleLogin} disabled={loading} className="btn-primary" style={{ padding: "12px", fontSize: "1rem", backgroundColor: "white", color: "#333", border: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: "20px", height: "20px" }} />
+                  Continue with Google
                 </button>
               </form>
 
