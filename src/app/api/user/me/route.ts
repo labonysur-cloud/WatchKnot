@@ -13,6 +13,9 @@ export async function GET(req: Request) {
         movies: {
           orderBy: { createdAt: "desc" },
         },
+        _count: {
+          select: { tickets: true, posts: true },
+        },
       },
     });
 

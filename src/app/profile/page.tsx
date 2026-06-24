@@ -1,355 +1,306 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Loader2, User, Search, UserPlus, UserCheck, Settings, X, Edit2, Clapperboard, Check, Trash2, Film } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
+import { User, Save, Loader2, Trash2, Film, Star, Ticket, BookHeart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+import { PageSkeleton } from "@/components/PageSkeleton";
 
-export default function ProfilePage() {
+export default function Profile() {
   const { user, loading: authLoading, getToken } = useAuth();
-  const router = useRouter();
+  const { toast } = useToast();
+
   const [dbUser, setDbUser] = useState<any>(null);
-  const [friends, setFriends] = useState<any[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [activeTab, setActiveTab] = useState<"movies" | "friends">("movies");
-  
-  // Edit Profile
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [editImage, setEditImage] = useState("");
   const [saving, setSaving] = useState(false);
+  
+  const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
-  // Search
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !user) router.push("/login");
-    if (!authLoading && user) {
-      fetchData();
-    }
-  }, [user, authLoading]);
-
-  const fetchData = async () => {
+  const fetchProfile = async () => {
     try {
-      setLoading(true);
       const token = await getToken();
-      
-      const [userRes, friendsRes] = await Promise.all([
-        fetch("/api/user/me", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/friends", { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-
-      const userData = await userRes.json();
-      const friendsData = await friendsRes.json();
-
-      if (userRes.ok) {
-        setDbUser(userData.user);
-        setEditName(userData.user.name || "");
-        setEditImage(userData.user.image || "");
+      const res = await fetch("/api/user/me", { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setDbUser(data.user);
+        setDisplayName(data.user.name || "");
+        setAvatarUrl(data.user.image || "");
       }
-      if (friendsRes.ok) {
-        setFriends(friendsData.friends || []);
-        setPendingRequests(friendsData.pendingRequests || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch profile data:", error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchProfile();
+    }
+  }, [user, authLoading]);
+
+  const deleteMovie = async (id: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/movies/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setDbUser((prev: any) => ({
+          ...prev,
+          movies: prev.movies.filter((m: any) => m.id !== id)
+        }));
+        toast({ title: "Deleted", description: "Movie removed from collection." });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSave = async () => {
     setSaving(true);
     try {
       const token = await getToken();
       const res = await fetch("/api/user", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: editName, image: editImage }),
+        body: JSON.stringify({ name: displayName, image: avatarUrl }),
       });
       if (res.ok) {
-        const data = await res.json();
-        setDbUser({ ...dbUser, name: data.user.name, image: data.user.image });
-        setIsEditing(false);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setSearching(true);
-    try {
-      const token = await getToken();
-      const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data.users || []);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const sendFriendRequest = async (targetId: string) => {
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/friends", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "ADD_BY_ID", targetUserId: targetId }),
-      });
-      if (res.ok) {
-        alert("Friend request sent!");
-        fetchData();
+        toast({ title: "Saved", description: "Your cinema card is updated" });
+        fetchProfile();
       } else {
-        const err = await res.json();
-        alert(err.message);
+        toast({ title: "Error", description: "Failed to save profile", variant: "destructive" });
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to save profile", variant: "destructive" });
     }
+    setSaving(false);
   };
 
-  const respondToRequest = async (targetId: string, action: "ACCEPT" | "DECLINE") => {
-    try {
-      const token = await getToken();
-      if (action === "ACCEPT") {
-        await fetch("/api/friends", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ action: "ACCEPT", targetUserId: targetId }),
-        });
-      } else {
-        await fetch(`/api/friends?id=${targetId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-      fetchData();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const removeFriend = async (targetId: string) => {
-    if (!confirm("Are you sure you want to unfriend them?")) return;
-    try {
-      const token = await getToken();
-      await fetch(`/api/friends?id=${targetId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchData();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  if (loading || !user || !dbUser) {
-    return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "calc(100vh - 64px)" }}><Loader2 className="animate-spin" size={40} color="var(--color-maroon)" /></div>;
+  if (loading || authLoading) {
+    return (
+      <div className="min-h-screen py-8 sm:py-12 px-4">
+        <PageSkeleton />
+      </div>
+    );
   }
 
+  if (!dbUser) return null;
+
+  const initial = (displayName?.[0] || user?.email?.[0] || "?").toUpperCase();
+  const joined = user?.metadata?.creationTime
+    ? new Date(user.metadata.creationTime).toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : "—";
+
+  const myMovies = dbUser.movies || [];
+
   return (
-    <div style={{ minHeight: "calc(100vh - 64px)", padding: "40px 20px", backgroundColor: "var(--color-bg)" }}>
-      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-        
-        {/* Profile Header */}
-        <div className="cute-card" style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: "30px", flexWrap: "wrap", position: "relative" }}>
-          <button onClick={() => setIsEditing(true)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer", color: "var(--color-maroon)" }}>
-            <Settings size={24} />
-          </button>
-          
-          <div style={{ width: "120px", height: "120px", borderRadius: "50%", backgroundColor: "var(--color-border)", overflow: "hidden", flexShrink: 0, border: "4px solid var(--color-maroon)" }}>
-            {dbUser.image ? (
-              <img src={dbUser.image} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--color-card)" }}>
-                <User size={50} color="var(--color-maroon)" />
-              </div>
-            )}
-          </div>
-          <div>
-            <h1 className="caveat" style={{ fontSize: "3rem", margin: "0 0 8px 0", lineHeight: 1 }}>{dbUser.name || "Movie Lover"}</h1>
-            <p style={{ color: "var(--color-text)", opacity: 0.7, margin: 0 }}>{dbUser.email}</p>
-            <div style={{ display: "flex", gap: "16px", marginTop: "12px" }}>
-              <span style={{ fontWeight: "bold", color: "var(--color-maroon)" }}>{dbUser.movies?.length || 0}</span> <span style={{ opacity: 0.8 }}>Movies</span>
-              <span style={{ fontWeight: "bold", color: "var(--color-maroon)" }}>{friends.length}</span> <span style={{ opacity: 0.8 }}>Friends</span>
+    <div className="min-h-screen py-8 sm:py-12 px-4 bg-polka">
+      <div className="container mx-auto max-w-4xl space-y-8">
+        {/* Hero / Polaroid */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative grid md:grid-cols-[auto_1fr] gap-6 md:gap-8 items-center rounded-[28px] border-2 border-border bg-card/95 p-6 sm:p-8 bg-gingham shadow-[0_18px_40px_-24px_hsl(var(--primary)/0.45)]"
+        >
+          {/* Washi tape */}
+          <span className="pointer-events-none absolute -top-3 left-10 h-6 w-24 rotate-[-6deg] rounded-sm bg-accent/70 shadow-sm" />
+          <span className="pointer-events-none absolute -top-3 right-10 h-6 w-24 rotate-[5deg] rounded-sm bg-primary/40 shadow-sm" />
+
+          {/* Polaroid avatar */}
+          <div className="mx-auto md:mx-0">
+            <div className="relative group bg-background/90 p-3 pb-10 rounded-md border border-border shadow-[0_10px_24px_-12px_hsl(var(--primary)/0.4)] rotate-[-2deg] hover:rotate-0 transition-transform">
+              <Avatar className="w-36 h-36 sm:w-44 sm:h-44 rounded-sm">
+                <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+                <AvatarFallback className="bg-muted text-muted-foreground text-4xl rounded-sm">
+                  {initial}
+                </AvatarFallback>
+              </Avatar>
+              <p className="absolute bottom-2 left-0 right-0 text-center font-handwritten text-base text-primary truncate px-3">
+                {displayName || "you ♡"}
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: "10px", marginBottom: "24px" }}>
-          <button 
-            onClick={() => setActiveTab("movies")}
-            style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "2px dashed var(--color-border)", backgroundColor: activeTab === "movies" ? "var(--color-maroon)" : "var(--color-card)", color: activeTab === "movies" ? "white" : "var(--color-text)", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "all 0.2s" }}
-          >
-            <Clapperboard size={18} /> My Shelf
-          </button>
-          <button 
-            onClick={() => setActiveTab("friends")}
-            style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "2px dashed var(--color-border)", backgroundColor: activeTab === "friends" ? "var(--color-maroon)" : "var(--color-card)", color: activeTab === "friends" ? "white" : "var(--color-text)", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "all 0.2s" }}
-          >
-            <User size={18} /> Friends {pendingRequests.length > 0 && <span style={{ backgroundColor: activeTab === "friends" ? "white" : "var(--color-maroon)", color: activeTab === "friends" ? "var(--color-maroon)" : "white", padding: "2px 8px", borderRadius: "12px", fontSize: "0.8rem" }}>{pendingRequests.length}</span>}
-          </button>
-        </div>
+          {/* Meta + stats */}
+          <div className="text-center md:text-left">
+            <p className="font-handwritten text-lg text-accent">your cozy cinema card</p>
+            <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground flex items-center gap-2 justify-center md:justify-start">
+              <User className="w-7 h-7 text-primary" />
+              {displayName || "Movie Lover"}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">{user?.email}</p>
+            <p className="text-xs text-muted-foreground font-handwritten text-base mt-1">
+              member since {joined}
+            </p>
 
-        {/* Content */}
-        {activeTab === "movies" ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "16px" }}>
-            {dbUser.movies?.map((movie: any, i: number) => (
-              <motion.div key={movie.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
-                <Link href={`/movies/${movie.id}`} style={{ display: "block", textDecoration: "none" }}>
-                  <div className="cute-card" style={{ padding: "8px", textAlign: "center" }}>
-                    <div style={{ width: "100%", aspectRatio: "2/3", backgroundColor: "var(--color-border)", borderRadius: "8px", overflow: "hidden", marginBottom: "8px" }}>
-                      {movie.posterUrl ? <img src={movie.posterUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Film style={{ margin: "auto", height: "100%" }} color="#999" />}
-                    </div>
-                    <h3 className="caveat" style={{ fontSize: "1.1rem", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--color-text)" }}>{movie.title}</h3>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-            {(!dbUser.movies || dbUser.movies.length === 0) && (
-              <p style={{ gridColumn: "1 / -1", textAlign: "center", padding: "40px", color: "#888" }}>Your shelf is empty! Add some movies.</p>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {/* Pending Requests */}
-            {pendingRequests.length > 0 && (
-              <div className="cute-card" style={{ backgroundColor: "rgba(128,0,0,0.05)" }}>
-                <h2 className="caveat" style={{ fontSize: "2rem", marginBottom: "16px" }}>Pending Requests</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {pendingRequests.map((req: any) => (
-                    <div key={req.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--color-card)", padding: "12px", borderRadius: "12px", border: "1px solid var(--color-border)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "var(--color-border)", overflow: "hidden" }}>
-                          {req.user1.image ? <img src={req.user1.image} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <User style={{ margin: "auto", height: "100%" }} color="#999" />}
-                        </div>
-                        <span style={{ fontWeight: "bold" }}>{req.user1.name || "Unknown"}</span>
-                      </div>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button onClick={() => respondToRequest(req.user1.id, "ACCEPT")} style={{ background: "var(--color-maroon)", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}><Check size={14} /> Accept</button>
-                        <button onClick={() => respondToRequest(req.user1.id, "DECLINE")} style={{ background: "transparent", color: "var(--color-text)", border: "1px solid var(--color-border)", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}><X size={14} /> Decline</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Find Friends */}
-            <div className="cute-card">
-              <h2 className="caveat" style={{ fontSize: "2rem", marginBottom: "16px" }}>Find Friends</h2>
-              <form onSubmit={handleSearch} style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-                <div style={{ position: "relative", flex: 1 }}>
-                  <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#999" }} />
-                  <input type="text" placeholder="Search by name or email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ width: "100%", padding: "12px 12px 12px 40px", borderRadius: "8px", border: "1px solid var(--color-border)", outline: "none", fontFamily: "var(--font-inter)", backgroundColor: "var(--color-bg)", color: "var(--color-text)" }} />
-                </div>
-                <button type="submit" disabled={searching} className="btn-primary" style={{ padding: "0 20px" }}>
-                  {searching ? <Loader2 className="animate-spin" size={20} /> : "Search"}
-                </button>
-              </form>
-              
-              {searchResults.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px", padding: "16px", border: "1px dashed var(--color-border)", borderRadius: "12px", backgroundColor: "var(--color-bg)" }}>
-                  {searchResults.map((su: any) => {
-                    const isFriend = friends.some(f => f.id === su.id);
-                    return (
-                      <div key={su.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <Link href={`/users/${su.id}`} style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "var(--color-text)" }}>
-                          <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "var(--color-border)", overflow: "hidden" }}>
-                            {su.image ? <img src={su.image} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <User style={{ margin: "auto", height: "100%" }} color="#999" size={16} />}
-                          </div>
-                          <span style={{ fontWeight: "bold" }}>{su.name || "Unknown"}</span>
-                        </Link>
-                        {isFriend ? (
-                          <span style={{ color: "green", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "4px" }}><UserCheck size={14} /> Friends</span>
-                        ) : (
-                          <button onClick={() => sendFriendRequest(su.id)} style={{ background: "none", border: "1px solid var(--color-maroon)", color: "var(--color-maroon)", padding: "4px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem" }}>Add Friend</button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* My Friends */}
-            <div className="cute-card">
-              <h2 className="caveat" style={{ fontSize: "2rem", marginBottom: "16px" }}>My Friends ({friends.length})</h2>
-              {friends.length === 0 ? (
-                <p style={{ color: "#888" }}>You haven't added any friends yet.</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {friends.map((friend: any) => (
-                    <div key={friend.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--color-bg)", padding: "12px", borderRadius: "12px", border: "1px solid var(--color-border)" }}>
-                      <Link href={`/users/${friend.id}`} style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none", color: "var(--color-text)" }}>
-                        <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "var(--color-border)", overflow: "hidden" }}>
-                          {friend.image ? <img src={friend.image} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <User style={{ margin: "auto", height: "100%" }} color="#999" />}
-                        </div>
-                        <span style={{ fontWeight: "bold" }}>{friend.name || "Unknown"}</span>
-                      </Link>
-                      <button onClick={() => removeFriend(friend.id)} style={{ background: "none", color: "#e53e3e", border: "none", padding: "6px", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="grid grid-cols-3 gap-3 mt-5 max-w-md mx-auto md:mx-0">
+              <StatChip icon={<Film className="w-4 h-4" />} value={myMovies.length} label="Added" />
+              <StatChip icon={<Ticket className="w-4 h-4" />} value={dbUser._count?.tickets || 0} label="Tickets" />
+              <StatChip icon={<BookHeart className="w-4 h-4" />} value={dbUser._count?.posts || 0} label="Journal" />
             </div>
           </div>
-        )}
+        </motion.div>
 
+        {/* Edit details */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="grid sm:grid-cols-2 gap-4 rounded-[24px] border-2 border-primary/10 bg-card/95 p-5 sm:p-6"
+        >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground font-handwritten text-base">
+              Display name
+            </label>
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your cinema name..."
+              className="rounded-2xl border-border/80 bg-background/80"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground font-handwritten text-base">
+              Avatar Image URL
+            </label>
+            <Input
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              placeholder="https://..."
+              className="rounded-2xl border-border/80 bg-background/80"
+            />
+          </div>
+          <div className="sm:col-span-2 flex justify-end">
+            <Button variant="default" className="bg-warm text-white hover:bg-warm/90" onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+              Save changes
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* My Movies */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-[24px] border-2 border-primary/10 bg-card/95 p-5 sm:p-7"
+        >
+          <div className="flex items-end justify-between mb-5">
+            <div>
+              <p className="font-handwritten text-lg text-accent">your shelf</p>
+              <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
+                <Film className="w-5 h-5 text-primary" /> Movies you added
+              </h2>
+            </div>
+            <span className="text-sm text-muted-foreground">{myMovies.length} total</span>
+          </div>
+
+          {myMovies.length === 0 ? (
+            <div className="text-center py-10 border-2 border-dashed border-border rounded-2xl bg-background/40">
+              <Film className="w-10 h-10 mx-auto text-muted-foreground/60" />
+              <p className="font-handwritten text-lg mt-2 text-muted-foreground">
+                no movies pinned yet
+              </p>
+              <p className="text-xs text-muted-foreground">Add one from the Movies page.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <AnimatePresence>
+                {myMovies.map((m: any, i: number) => (
+                  <motion.div
+                    key={m.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="group relative bg-background/80 p-2 pb-8 rounded-md border border-border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+                    style={{ transform: `rotate(${(i % 2 === 0 ? -1 : 1) * 1.2}deg)` }}
+                  >
+                    <div className="aspect-[2/3] overflow-hidden rounded-sm bg-muted">
+                      <img
+                        src={m.posterUrl || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=600&fit=crop"}
+                        alt={m.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    {m.rating > 0 && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1 bg-card/90 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
+                        <Star className="w-3 h-3 text-accent fill-accent" />
+                        <span className="text-[10px] font-bold">{m.rating}</span>
+                      </div>
+                    )}
+                    <p className="absolute bottom-1.5 left-0 right-0 text-center font-handwritten text-sm text-primary truncate px-2">
+                      {m.title}
+                    </p>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          aria-label={`Remove ${m.title}`}
+                          className="absolute top-3 left-3 p-1.5 rounded-full bg-card/85 backdrop-blur border border-border opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove "{m.title}"?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This deletes the movie from the shared collection.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep it</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteMovie(m.id)}
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </motion.section>
       </div>
+    </div>
+  );
+}
 
-      {/* Edit Profile Modal */}
-      <AnimatePresence>
-        {isEditing && (
-          <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="cute-card" style={{ width: "100%", maxWidth: "500px", position: "relative" }}>
-              <button onClick={() => setIsEditing(false)} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer", color: "var(--color-text)" }}><X size={24} /></button>
-              <h2 className="caveat" style={{ fontSize: "2.5rem", marginBottom: "20px" }}>Edit Profile</h2>
-              
-              <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "0.9rem" }}>Display Name</label>
-                  <input type="text" value={editName} onChange={e => setEditName(e.target.value)} required style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid var(--color-border)", outline: "none", fontFamily: "var(--font-inter)", backgroundColor: "var(--color-bg)", color: "var(--color-text)" }} />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold", fontSize: "0.9rem" }}>Profile Picture URL</label>
-                  <input type="url" value={editImage} onChange={e => setEditImage(e.target.value)} placeholder="https://api.dicebear.com/7.x/adventurer/svg?seed=Felix" style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid var(--color-border)", outline: "none", fontFamily: "var(--font-inter)", backgroundColor: "var(--color-bg)", color: "var(--color-text)" }} />
-                  <p style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>Pro tip: Try <a href="https://dicebear.com/styles" target="_blank" style={{ color: "var(--color-maroon)", textDecoration: "underline" }}>Dicebear</a> for cute free avatars!</p>
-                </div>
-                
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "10px" }}>
-                  <button type="button" onClick={() => setIsEditing(false)} style={{ padding: "10px 20px", background: "none", border: "1px solid var(--color-border)", borderRadius: "8px", cursor: "pointer", color: "var(--color-text)", fontWeight: "bold" }}>Cancel</button>
-                  <button type="submit" disabled={saving} className="btn-primary" style={{ padding: "10px 20px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Save Changes
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
+function StatChip({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl bg-background/80 border border-border py-3 px-2 shadow-sm">
+      <div className="flex items-center gap-1 text-primary">
+        {icon}
+        <span className="font-display text-xl font-bold text-foreground">{value}</span>
+      </div>
+      <span className="text-xs text-muted-foreground font-handwritten text-sm">{label}</span>
     </div>
   );
 }
