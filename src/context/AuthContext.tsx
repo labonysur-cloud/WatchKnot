@@ -1,27 +1,72 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
+export interface UserProfile {
+  isAdmin: boolean;
+  isBanned: boolean;
+  ticketCount: number;
+}
+
 interface AuthContextType {
   user: User | null;
+  profile: UserProfile | null;
   loading: boolean;
   getToken: () => Promise<string | null>;
   logOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  profile: null,
   loading: true,
   getToken: async () => null,
   logOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isBanned, setIsBanned] = useState(false);
+
+  const fetchProfile = useCallback(async (firebaseUser: User) => {
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch("/api/user/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setProfile({
+          isBanned: data.user?.isBanned === true,
+          isAdmin: data.user?.isAdmin === true,
+          ticketCount: data.user?._count?.tickets ?? 0,
+        });
+      } else {
+        setProfile({
+          isBanned: false,
+          isAdmin: false,
+          ticketCount: 0,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      setProfile({
+        isBanned: false,
+        isAdmin: false,
+        ticketCount: 0,
+      });
+    }
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    if (user) await fetchProfile(user);
+  }, [user, fetchProfile]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -29,26 +74,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
 
       if (firebaseUser) {
-        try {
-          const token = await firebaseUser.getIdToken();
-          const res = await fetch("/api/user/me", {
-            headers: { "Authorization": `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.user?.isBanned) {
-              setIsBanned(true);
-            }
-          }
-        } catch (e) {
-          console.error(e);
-        }
+        await fetchProfile(firebaseUser);
       } else {
-        setIsBanned(false);
+        setProfile(null);
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [fetchProfile]);
 
   const getToken = async () => {
     if (!user) return null;
@@ -57,13 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logOut = async () => {
     await signOut(auth);
+    setProfile(null);
   };
 
-  if (isBanned) {
+  if (profile?.isBanned) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "var(--color-bg)", color: "var(--color-text)", textAlign: "center", padding: "20px" }}>
-        <h1 className="caveat" style={{ fontSize: "4rem", color: "var(--color-maroon)", margin: 0 }}>Banned</h1>
-        <p style={{ fontSize: "1.2rem", maxWidth: "400px", marginTop: "20px" }}>
+      <div className="flex flex-col justify-center items-center h-screen bg-background text-foreground text-center p-5">
+        <h1 className="font-handwritten text-6xl text-primary m-0">Banned</h1>
+        <p className="text-lg max-w-md mt-5 text-muted-foreground">
           You have been banned from WatchKnot. You can no longer access the platform.
         </p>
       </div>
@@ -71,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, getToken, logOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, getToken, logOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

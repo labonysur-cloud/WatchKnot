@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { DownloadMetadata, getDownloadedMedia, removeDownloadedMedia } from "@/lib/offlineManager";
 import { Trash2, Film, PlayCircle } from "lucide-react";
 import Link from "next/link";
-import MediaPlayer from "@/components/MediaPlayer"; // We will probably render a custom offline player if they click play.
 
 export default function DownloadsPage() {
   const [downloads, setDownloads] = useState<DownloadMetadata[]>([]);

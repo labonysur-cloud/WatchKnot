@@ -3,12 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Users, Play, Clock, Link as LinkIcon, Copy, MessageCircle, Send, X, Smile, Image as ImageIcon } from "lucide-react";
+import { Loader2, ArrowLeft, Users, Clock, Copy, Check, MessageCircle, Send, X, Smile } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, collection, addDoc, query, orderBy, limit } from "firebase/firestore";
 import MediaPlayer from "@/components/MediaPlayer";
+import ReactionOverlay from "@/components/WatchParty/ReactionOverlay";
+import VoiceChat from "@/components/WatchParty/VoiceChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -84,25 +86,7 @@ export default function WatchRoomPage() {
 
     const unsub = onSnapshot(roomRef, (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data();
-        setRoomData(data);
-        
-        if (data.state === "countdown" && data.countdownAt) {
-          const targetTime = data.countdownAt.toMillis();
-          const checkTimer = setInterval(() => {
-            const now = Date.now();
-            const diff = Math.ceil((targetTime - now) / 1000);
-            if (diff <= 0) {
-              setCountdown(0);
-              clearInterval(checkTimer);
-            } else {
-              setCountdown(diff);
-            }
-          }, 100);
-          return () => clearInterval(checkTimer);
-        } else {
-          setCountdown(null);
-        }
+        setRoomData(docSnap.data());
       }
     });
 
@@ -118,6 +102,27 @@ export default function WatchRoomPage() {
 
     return () => { unsub(); unsubMsgs(); };
   }, [user, roomId, id, movieData]);
+
+  useEffect(() => {
+    if (!roomData || roomData.state !== "countdown" || !roomData.countdownAt) {
+      setCountdown(null);
+      return;
+    }
+
+    const targetTime =
+      typeof roomData.countdownAt.toMillis === "function"
+        ? roomData.countdownAt.toMillis()
+        : roomData.countdownAt;
+
+    const tick = () => {
+      const diff = Math.ceil((targetTime - Date.now()) / 1000);
+      setCountdown(diff <= 0 ? 0 : diff);
+    };
+
+    tick();
+    const interval = setInterval(tick, 100);
+    return () => clearInterval(interval);
+  }, [roomData?.state, roomData?.countdownAt]);
 
   useEffect(() => {
     if (roomData && movieData) setLoading(false);
@@ -201,6 +206,17 @@ export default function WatchRoomPage() {
         </div>
       </motion.div>
 
+      {user && (
+        <div className="px-4 py-2 shrink-0">
+          <VoiceChat
+            roomId={roomId}
+            userId={user.uid}
+            userName={user.displayName || "Guest"}
+            isHost={isHost}
+          />
+        </div>
+      )}
+
       {/* Main Content Area */}
       <div className="flex flex-1 min-h-0">
         
@@ -212,6 +228,10 @@ export default function WatchRoomPage() {
               title={movieData.title} 
               movieId={id} 
             />
+
+            {user && (
+              <ReactionOverlay roomId={roomId} userId={user.uid} />
+            )}
 
             {/* Ready Check / Countdown Overlay */}
             <AnimatePresence>

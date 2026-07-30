@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { serverError } from "@/lib/apiResponse";
 
 export async function GET() {
   try {
-    // Fetch recent movies that have a videoUrl attached
     const playableMovies = await prisma.movie.findMany({
       where: {
         videoUrl: {
@@ -19,6 +19,6 @@ export async function GET() {
     return NextResponse.json({ movies: playableMovies });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ message: "Error fetching playable movies" }, { status: 500 });
+    return serverError("Error fetching playable movies");
   }
 }

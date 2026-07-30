@@ -40,8 +40,8 @@ A robust admin dashboard ensuring platform safety and content standards.
 
 ## Technology Stack
 
-*   **Frontend Framework**: Next.js 15 (App Router, Server Components)
-*   **Styling**: Pure CSS and CSS Modules (No TailwindCSS, enforcing custom design systems)
+*   **Frontend Framework**: Next.js 16 (App Router, Server Components)
+*   **Styling**: Tailwind CSS + shadcn/ui with custom vintage theme (CSS variables in `globals.css`)
 *   **Database**: Neon (Serverless PostgreSQL)
 *   **ORM**: Prisma
 *   **Authentication**: Firebase Authentication and Firebase Admin SDK
@@ -66,11 +66,13 @@ The application follows a modern serverless architecture utilizing Next.js Serve
     ```bash
     npm install
     ```
-3.  Configure your environment variables. Create a `.env` file in the root directory and provide your keys:
+3.  Configure your environment variables. Create a `.env.local` file in the root directory and provide your keys:
     *   `DATABASE_URL` (Neon Postgres Connection String)
-    *   Firebase Client Configuration
-    *   Firebase Admin Service Account credentials
+    *   Firebase Client Configuration (`NEXT_PUBLIC_FIREBASE_*`)
+    *   Firebase Admin (`FIREBASE_PROJECT_ID`, optional `FIREBASE_SERVICE_ACCOUNT_KEY`)
     *   `GROQ_API_KEY`
+    *   Cloudinary (`NEXT_PUBLIC_CLOUDINARY_*`, `CLOUDINARY_API_SECRET`)
+    *   `ADMIN_EMAILS` (optional, comma-separated admin emails)
 4.  Initialize the database schema:
     ```bash
     npx prisma db push

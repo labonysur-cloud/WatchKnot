@@ -18,7 +18,7 @@ const audienceMeta: Record<Audience, { label: string; icon: typeof Globe; hint: 
 };
 
 export default function CreatePost({ onPostCreated }: { onPostCreated: () => void }) {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -85,15 +85,21 @@ export default function CreatePost({ onPostCreated }: { onPostCreated: () => voi
       let mediaType = null;
 
       if (mediaFile) {
-        // 1. Get Cloudinary Signature
-        const sigRes = await fetch("/api/upload/signature");
+        const token = await getToken();
+        if (!token) throw new Error("You must be signed in to upload media.");
+
+        const sigRes = await fetch("/api/upload/signature", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!sigRes.ok) throw new Error("Failed to get upload signature.");
         const { timestamp, signature } = await sigRes.json();
         const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+        if (!cloudName || !apiKey) throw new Error("Cloudinary is not configured.");
 
-        // 2. Upload to Cloudinary
         const formData = new FormData();
         formData.append("file", mediaFile);
-        formData.append("api_key", process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || "234993462578482"); // fallback for demo
+        formData.append("api_key", apiKey);
         formData.append("timestamp", timestamp.toString());
         formData.append("signature", signature);
         formData.append("folder", "watchknot-journal");
@@ -110,13 +116,13 @@ export default function CreatePost({ onPostCreated }: { onPostCreated: () => voi
         mediaType = mediaFile.type.startsWith("video/") ? "video" : "image";
       }
 
-      // 3. Post to our backend
-      const token = await user?.getIdToken();
+      // Post to our backend
+      const postToken = await getToken();
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
+          "Authorization": `Bearer ${postToken}` 
         },
         body: JSON.stringify({
           content,

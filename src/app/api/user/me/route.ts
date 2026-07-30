@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/getAuthUser";
 import { prisma } from "@/lib/prisma";
+import { checkAdmin } from "@/lib/checkAdmin";
+import { unauthorized, notFound, serverError } from "@/lib/apiResponse";
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user) return unauthorized();
 
   try {
     const dbUser = await prisma.user.findUnique({
@@ -20,12 +22,16 @@ export async function GET(req: Request) {
     });
 
     if (!dbUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return notFound("User not found");
     }
 
-    return NextResponse.json({ user: dbUser });
+    const isAdmin = dbUser.isAdmin || (await checkAdmin(req));
+
+    return NextResponse.json({
+      user: { ...dbUser, isAdmin },
+    });
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    return serverError();
   }
 }

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/getAuthUser";
 import { prisma } from "@/lib/prisma";
+import { unauthorized, notFound, serverError } from "@/lib/apiResponse";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getAuthUser(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user) return unauthorized();
 
   const { id } = await params;
 
@@ -19,10 +20,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     });
 
     if (!targetUser) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return notFound("User not found");
     }
 
-    // Check friendship status
     let friendStatus = "NONE";
 
     const friendship = await prisma.friendship.findFirst({
@@ -38,11 +38,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       if (friendship.status === "ACCEPTED") {
         friendStatus = "FRIENDS";
       } else if (friendship.status === "PENDING") {
-        if (friendship.user1Id === user.uid) {
-          friendStatus = "PENDING_SENT";
-        } else {
-          friendStatus = "PENDING_RECEIVED";
-        }
+        friendStatus = friendship.user1Id === user.uid ? "PENDING_SENT" : "PENDING_RECEIVED";
       }
     }
 
@@ -57,6 +53,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    return serverError();
   }
 }

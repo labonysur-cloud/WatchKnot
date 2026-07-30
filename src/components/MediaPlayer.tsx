@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { formatVideoUrl } from "@/lib/videoUrl";
 
 export default function MediaPlayer({ videoUrl, title, movieId }: { videoUrl: string, title: string, movieId: string }) {
   const searchParams = useSearchParams();
@@ -105,11 +106,10 @@ export default function MediaPlayer({ videoUrl, title, movieId }: { videoUrl: st
   return (
     <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#000", borderRadius: "16px", overflow: "hidden", border: "2px solid var(--color-border)" }}>
       <iframe
-        src={videoUrl}
+        src={formatVideoUrl(videoUrl)}
         style={{ width: "100%", height: "100%", border: "none" }}
         allowFullScreen
-        // VERY STRICT SANDBOX FOR AD BLOCKING
-        sandbox="allow-scripts allow-same-origin allow-presentation"
+        sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
         title={`Watch ${title}`}
       />
     </div>

@@ -12,7 +12,7 @@ import SeatPicker from "@/components/SeatPicker";
 import { PopcornIcon } from "@/components/icons/CinemaIcons";
 
 export default function BookTicketPage() {
-  const { user, loading: authLoading, getToken } = useAuth();
+  const { user, loading: authLoading, getToken, refreshProfile } = useAuth();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -81,10 +81,11 @@ export default function BookTicketPage() {
       
       const data = await res.json();
       if (res.ok) {
+        await refreshProfile();
         toast({ title: "Tickets booked!", description: "Generating your personalized ticket..." });
         router.push(`/movies/${id}/ticket`);
       } else {
-        toast({ title: "Booking failed", description: data.message, variant: "destructive" });
+        toast({ title: "Booking failed", description: data.error || data.message, variant: "destructive" });
         fetchData();
         setSelectedSeats([]);
       }

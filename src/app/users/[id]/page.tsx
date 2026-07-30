@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { PageSkeleton } from "@/components/PageSkeleton";
+import { PublicProfileSkeleton } from "@/components/PageSkeleton";
 
 export default function PublicProfilePage() {
   const { user, loading: authLoading, getToken } = useAuth();
@@ -106,7 +106,7 @@ export default function PublicProfilePage() {
   if (loading || authLoading || !targetUser) {
     return (
       <div className="min-h-screen py-8 sm:py-12 px-4">
-        <PageSkeleton />
+        <PublicProfileSkeleton />
       </div>
     );
   }

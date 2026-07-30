@@ -2,33 +2,33 @@ import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/getAuthUser";
 import { prisma } from "@/lib/prisma";
 import Groq from "groq-sdk";
+import { unauthorized, badRequest, notFound, apiError, serverError } from "@/lib/apiResponse";
 
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 export async function POST(req: Request) {
   try {
     const user = await getAuthUser(req);
-    if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!user) return unauthorized();
 
     const { movieId, seats } = await req.json();
-    if (!movieId) return NextResponse.json({ message: "Movie ID is required" }, { status: 400 });
+    if (!movieId) return badRequest("Movie ID is required");
     if (!seats || !Array.isArray(seats) || seats.length === 0 || seats.length > 2) {
-      return NextResponse.json({ message: "Please select 1 or 2 seats" }, { status: 400 });
+      return badRequest("Please select 1 or 2 seats");
     }
 
     const movie = await prisma.movie.findUnique({ where: { id: movieId } });
-    if (!movie) return NextResponse.json({ message: "Movie not found" }, { status: 404 });
+    if (!movie) return notFound("Movie not found");
 
-    // Ensure seats aren't already booked
     const existingTickets = await prisma.ticket.findMany({
       where: {
         movieId,
-        OR: seats.map(s => ({ seatRow: s.row, seatNumber: s.number })),
+        OR: seats.map((s: { row: string; number: number }) => ({ seatRow: s.row, seatNumber: s.number })),
       },
     });
 
     if (existingTickets.length > 0) {
-      return NextResponse.json({ message: "One or more selected seats are already booked" }, { status: 400 });
+      return badRequest("One or more selected seats are already booked");
     }
 
     let message = "Enjoy the show! Grab some popcorn and relax.";
@@ -47,7 +47,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create tickets sequentially to handle potential race conditions gracefully
     const createdTickets = [];
     for (const seat of seats) {
       try {
@@ -61,29 +60,30 @@ export async function POST(req: Request) {
           },
           include: {
             movie: true,
-          }
+          },
         });
         createdTickets.push(ticket);
-      } catch (error: any) {
-        if (error.code === 'P2002') {
-           return NextResponse.json({ message: `Seat ${seat.row}${seat.number} was just booked by someone else!` }, { status: 409 });
+      } catch (error: unknown) {
+        const prismaError = error as { code?: string };
+        if (prismaError.code === "P2002") {
+          return apiError(`Seat ${seat.row}${seat.number} was just booked by someone else!`, 409);
         }
         throw error;
       }
     }
 
-    // We return the first ticket for the immediate view, though both are saved.
     return NextResponse.json({ ticket: createdTickets[0], allTickets: createdTickets }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Ticket API Error:", error);
-    return NextResponse.json({ message: error.message || "Failed to create ticket" }, { status: 500 });
+    const err = error as Error;
+    return serverError(err.message || "Failed to create ticket");
   }
 }
 
 export async function GET(req: Request) {
   try {
     const user = await getAuthUser(req);
-    if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    if (!user) return unauthorized();
 
     const tickets = await prisma.ticket.findMany({
       where: { userId: user.uid },
@@ -92,7 +92,8 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ tickets });
-  } catch (error: any) {
-    return NextResponse.json({ message: error.message || "Failed to fetch tickets" }, { status: 500 });
+  } catch (error: unknown) {
+    const err = error as Error;
+    return serverError(err.message || "Failed to fetch tickets");
   }
 }

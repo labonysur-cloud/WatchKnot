@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/getAuthUser";
 import { prisma } from "@/lib/prisma";
+import { unauthorized, notFound, badRequest, serverError } from "@/lib/apiResponse";
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user) return unauthorized();
 
   const friendships = await prisma.friendship.findMany({
     where: {
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
     },
   });
 
-  const friends = friendships.map((f: any) => f.user1Id === user.uid ? f.user2 : f.user1);
+  const friends = friendships.map((f) => (f.user1Id === user.uid ? f.user2 : f.user1));
 
   const pendingRequests = await prisma.friendship.findMany({
     where: { user2Id: user.uid, status: "PENDING" },
@@ -29,19 +30,19 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const user = await getAuthUser(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user) return unauthorized();
 
   const { action, targetUserId, email } = await req.json();
 
   if (action === "ADD_BY_EMAIL") {
     const target = await prisma.user.findUnique({ where: { email } });
-    if (!target) return NextResponse.json({ message: "User not found" }, { status: 404 });
-    if (target.id === user.uid) return NextResponse.json({ message: "Cannot add yourself" }, { status: 400 });
+    if (!target) return notFound("User not found");
+    if (target.id === user.uid) return badRequest("Cannot add yourself");
 
     const existing = await prisma.friendship.findFirst({
       where: { OR: [{ user1Id: user.uid, user2Id: target.id }, { user1Id: target.id, user2Id: user.uid }] },
     });
-    if (existing) return NextResponse.json({ message: "Request already exists" }, { status: 400 });
+    if (existing) return badRequest("Request already exists");
 
     await prisma.friendship.create({ data: { user1Id: user.uid, user2Id: target.id, status: "PENDING" } });
     return NextResponse.json({ message: "Friend request sent" });
@@ -49,13 +50,13 @@ export async function POST(req: Request) {
 
   if (action === "ADD_BY_ID") {
     const target = await prisma.user.findUnique({ where: { id: targetUserId } });
-    if (!target) return NextResponse.json({ message: "User not found" }, { status: 404 });
-    if (target.id === user.uid) return NextResponse.json({ message: "Cannot add yourself" }, { status: 400 });
+    if (!target) return notFound("User not found");
+    if (target.id === user.uid) return badRequest("Cannot add yourself");
 
     const existing = await prisma.friendship.findFirst({
       where: { OR: [{ user1Id: user.uid, user2Id: target.id }, { user1Id: target.id, user2Id: user.uid }] },
     });
-    if (existing) return NextResponse.json({ message: "Request already exists" }, { status: 400 });
+    if (existing) return badRequest("Request already exists");
 
     await prisma.friendship.create({ data: { user1Id: user.uid, user2Id: target.id, status: "PENDING" } });
     return NextResponse.json({ message: "Friend request sent" });
@@ -69,19 +70,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Accepted" });
   }
 
-  return NextResponse.json({ message: "Invalid action" }, { status: 400 });
+  return badRequest("Invalid action");
 }
 
 export async function DELETE(req: Request) {
   const user = await getAuthUser(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user) return unauthorized();
 
   try {
     const { searchParams } = new URL(req.url);
     const targetUserId = searchParams.get("id");
 
     if (!targetUserId) {
-      return NextResponse.json({ message: "Invalid target user" }, { status: 400 });
+      return badRequest("Invalid target user");
     }
 
     const existing = await prisma.friendship.findFirst({
@@ -94,7 +95,7 @@ export async function DELETE(req: Request) {
     });
 
     if (!existing) {
-      return NextResponse.json({ message: "Friendship not found" }, { status: 404 });
+      return notFound("Friendship not found");
     }
 
     await prisma.friendship.delete({
@@ -104,6 +105,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting friendship:", error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    return serverError();
   }
 }

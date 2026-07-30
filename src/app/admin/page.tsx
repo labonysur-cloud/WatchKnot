@@ -7,7 +7,7 @@ import { Loader2, ShieldAlert, Users, Film, Search, Trash2, Ban, UserCheck } fro
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<"users" | "movies">("users");
@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState<any[]>([]);
   const [fetching, setFetching] = useState(true);
 
-  const isAdmin = user?.email === "labonysur473@gmail.com";
+  const isAdmin = profile?.isAdmin ?? false;
 
   const fetchData = useCallback(async () => {
     if (!isAdmin) return;

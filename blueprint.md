@@ -4,50 +4,75 @@ This document serves as a living blueprint and memory for AI agents and develope
 
 ## Project Overview
 WatchKnot is a full-stack Next.js social platform and virtual movie theater. It allows users to collect, review, and watch movies together, with a focus on a cozy, vintage-aesthetic design.
-**Key Tech Stack**: Next.js 15 (App Router), Neon (PostgreSQL), Prisma, Firebase Auth/Storage, PeerJS (WebRTC), Groq API, Cloudinary.
+**Key Tech Stack**: Next.js 16 (App Router), Neon (PostgreSQL), Prisma, Firebase Auth/Firestore/Storage, PeerJS (WebRTC voice), Groq API, Cloudinary, Tailwind CSS + shadcn/ui.
 
 ---
 
 ## 🛠️ Developer Log (Recent Actions)
 
-### 1. PWA & Logo Integration
+### 1. Project Hardening (June 2026)
+*   **Security**: Authenticated `/api/upload/signature`; validated `/api/user/sync` against Firebase token; admin emails configurable via `ADMIN_EMAILS` env var.
+*   **API consistency**: Standardized error responses to `{ error: string }` via `src/lib/apiResponse.ts`.
+*   **Auth profile**: `AuthContext` exposes `profile.isAdmin` and `profile.ticketCount` for Navbar and admin gating.
+*   **Watch rooms**: Integrated `ReactionOverlay` and `VoiceChat`; fixed countdown timer leak and missing `Check` icon import.
+*   **Cleanup**: Removed unused `ChatOverlay`, `ThemeProvider`, `page.module.css`, and UploadThing dependencies.
+*   **UX**: Added global `error.tsx` and `not-found.tsx` boundaries.
+
+### 2. PWA & Logo Integration
 *   **Action**: Integrated `gemini-svg.svg` as the core application logo.
-*   **Implementation**: Copied to `src/app/icon.svg` (for default Next.js favicon) and `public/icon.svg`.
-*   **Manifest**: Updated `public/manifest.json` to point to the scalable SVG with `purpose: "any maskable"` for perfect rendering on Android/iOS homescreens.
-*   **Metadata**: Injected Apple Web App meta tags into `src/app/layout.tsx`.
+*   **Implementation**: Copied to `src/app/icon.svg` and `public/icon.svg`.
+*   **Manifest**: Updated `public/manifest.json` for Android/iOS homescreens.
+*   **Metadata**: Apple Web App meta tags in `src/app/layout.tsx`.
 
-### 2. Offline Mode Support (Service Worker)
+### 3. Offline Mode Support (Service Worker)
 *   **Action**: Ensured the web app UI loads offline so users can access downloaded videos.
-*   **Implementation**: Overhauled `public/sw.js` to implement a **Network First** caching strategy for navigation requests and a **Cache First** strategy for static assets. This runs alongside the existing `watchknot-media-v1` cache for handling video range requests.
+*   **Implementation**: `public/sw.js` — **Network First** for navigation, **Cache First** for static assets, plus `watchknot-media-v1` for video range requests.
 
-### 3. Security & Git History Purge
-*   **Action**: Resolved GitHub security alerts regarding leaked environment variables.
-*   **Implementation**: 
-    1. Renamed `.env` to `.env.local` to safely hide local secrets.
-    2. Executed `git filter-branch` to completely eradicate `.env` from the repository's history.
-    3. Force-pushed the scrubbed history to both `origin` (whimsical-maker) and `labonysur` (labonysur-cloud).
+### 4. Security & Git History Purge
+*   Renamed `.env` to `.env.local`; scrubbed leaked secrets from git history.
 
 ---
 
-## 🗺️ The Blueprint (What needs to be done properly)
-
-When working on WatchKnot, always adhere to the following architectural and design guidelines:
+## 🗺️ The Blueprint (Guidelines)
 
 ### 1. Design & Aesthetics
-*   **No TailwindCSS**: This project strictly uses pure CSS and CSS Modules (`.module.css`). Do not install or use TailwindCSS utility classes.
-*   **Vintage Vibe**: Maintain the "cozy, vintage-aesthetic". Always use colors, typography, and borders that align with this theme (e.g., retro ticket designs, gingham patterns, soft pinks/creams).
+*   **Styling**: Tailwind CSS with custom vintage theme variables in `globals.css` (rose/cream/gold palette). shadcn/ui for components.
+*   **Typography**: Playfair Display, Nunito, Caveat via Google Fonts.
+*   **Vintage Vibe**: Retro ticket designs, gingham patterns, soft pinks/creams.
 
 ### 2. PWA & Offline Experience
-*   **Always Test Offline**: Any new routes or major UI components must be cacheable by `sw.js`. Ensure that Next.js client-side navigations do not break when disconnected from the internet.
-*   **Downloads**: Media files must bypass standard dynamic caching and be explicitly saved to `watchknot-media-v1` using the built-in offline manager.
+*   **Always Test Offline**: New routes must be cacheable by `sw.js`.
+*   **Downloads**: Media saved to `watchknot-media-v1` via `offlineManager`.
 
 ### 3. Security & Secrets
-*   **NEVER Commit `.env`**: Always ensure `.env.local` is used for secrets and that it remains in `.gitignore`.
-*   **Client vs Server**: Ensure Firebase Admin is only used in `/api` routes or Server Actions. Client components must only use the Firebase Client SDK.
+*   **NEVER Commit `.env`**: Use `.env.local` (in `.gitignore`).
+*   **Client vs Server**: Firebase Admin only in `/api` routes. Client uses Firebase Client SDK.
+*   **Admin**: Set `ADMIN_EMAILS` (comma-separated) or `user.isAdmin` in database.
+*   **Uploads**: Cloudinary signatures require authenticated user.
 
-### 4. Real-time Synchronization
-*   **Watch Rooms**: Any modifications to the video player must preserve the PeerJS WebRTC syncing logic. Do not introduce latency-heavy server polls for play/pause events.
+### 4. Real-time & Watch Rooms
+*   **Firestore**: Room state, chat (`messages` subcollection), voice peer discovery (`peerIds`).
+*   **PeerJS**: Voice chat mesh via WebRTC; Firestore for signaling only.
+*   **Video sync**: Countdown overlay prompts synchronized manual play (iframe embeds cannot be programmatically controlled).
 
-### 5. Next.js 15 Considerations
-*   **Async Params**: Remember that route `params` and `searchParams` are asynchronous in Next.js 15. Always `await` them before usage.
-*   **Vercel Timeouts**: Keep Server Actions and API routes efficient. Heavily restrict fetch timeouts (especially for Groq AI or external scraping) to prevent Vercel 504 errors.
+### 5. Next.js Considerations
+*   **Async Params**: Always `await params` before usage.
+*   **Vercel Timeouts**: Restrict external fetch timeouts (Groq, scraping) to prevent 504 errors.
+*   **Read `node_modules/next/dist/docs/`** before writing Next.js code — APIs differ from older versions.
+
+---
+
+## Environment Variables
+
+```
+DATABASE_URL
+GROQ_API_KEY
+ADMIN_EMAILS                    # Optional, comma-separated admin emails
+FIREBASE_PROJECT_ID             # Optional, defaults to watchknot
+FIREBASE_SERVICE_ACCOUNT_KEY    # Optional JSON string for production auth
+NEXT_PUBLIC_FIREBASE_*
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+NEXT_PUBLIC_CLOUDINARY_API_KEY
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+```

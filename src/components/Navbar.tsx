@@ -20,13 +20,12 @@ const links = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, logOut } = useAuth();
+  const { user, profile, logOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  
-  // For now, no admin/ticket count logic until backend is ported
-  const sharedTicketCount = 0; 
-  const isAdmin = false; 
+
+  const isAdmin = profile?.isAdmin ?? false;
+  const ticketCount = profile?.ticketCount ?? 0;
 
   const navLinks = isAdmin ? [...links, { to: "/admin", label: "Admin", icon: ShieldCheck }] : links;
 
@@ -56,9 +55,9 @@ export default function Navbar() {
             >
               <Icon className="w-4 h-4" />
               <span>{label}</span>
-              {to === "/tickets" && sharedTicketCount > 0 && (
+              {to === "/tickets" && ticketCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 animate-pulse">
-                  {sharedTicketCount}
+                  {ticketCount}
                 </span>
               )}
             </Link>
@@ -103,9 +102,9 @@ export default function Navbar() {
             className="h-9 w-9 rounded-full relative"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            {sharedTicketCount > 0 && !mobileOpen && (
+            {ticketCount > 0 && !mobileOpen && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-0.5">
-                {sharedTicketCount}
+                {ticketCount}
               </span>
             )}
           </Button>
@@ -129,9 +128,9 @@ export default function Navbar() {
             >
               <Icon className="w-4 h-4" />
               {label}
-              {to === "/tickets" && sharedTicketCount > 0 && (
+              {to === "/tickets" && ticketCount > 0 && (
                 <span className="ml-auto min-w-[20px] h-[20px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
-                  {sharedTicketCount} 🎁
+                  {ticketCount}
                 </span>
               )}
             </Link>

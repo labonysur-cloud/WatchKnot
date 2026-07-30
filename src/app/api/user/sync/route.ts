@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/getAuthUser";
 import { prisma } from "@/lib/prisma";
+import { unauthorized, badRequest, serverError } from "@/lib/apiResponse";
 
 export async function POST(req: Request) {
   const firebaseUser = await getAuthUser(req);
-  if (!firebaseUser) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!firebaseUser) return unauthorized();
 
   const { name, email, uid } = await req.json();
+
+  if (!email || !uid) {
+    return badRequest("Email and uid are required");
+  }
+
+  if (email !== firebaseUser.email || uid !== firebaseUser.uid) {
+    return badRequest("User data does not match authenticated account");
+  }
 
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -15,7 +24,7 @@ export async function POST(req: Request) {
     const user = await prisma.user.create({
       data: {
         id: uid,
-        name,
+        name: name ?? firebaseUser.name ?? null,
         email,
         emailVerified: new Date(),
       },
@@ -24,6 +33,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
     console.error("Sync error:", error);
-    return NextResponse.json({ message: "Error syncing user" }, { status: 500 });
+    return serverError("Error syncing user");
   }
 }

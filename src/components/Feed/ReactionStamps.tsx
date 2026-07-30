@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 
 export type ReactionKey =
@@ -7,9 +8,9 @@ export type ReactionKey =
 type StampDef = {
   key: ReactionKey;
   label: string;
-  color: string;          // text/border
-  bg: string;             // fill behind label
-  draw: (s: number) => JSX.Element; // inline SVG art at size s
+  color: string;
+  bg: string;
+  draw: (s: number) => React.ReactElement;
 };
 
 const path = (d: string, props: React.SVGProps<SVGPathElement> = {}) => (

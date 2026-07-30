@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Shield, Ticket, BookOpen, ChevronLeft, ChevronRight, Play, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { formatVideoUrl } from "@/lib/videoUrl";
 
 export default function TheaterMode({ movie }: { movie: any }) {
   const router = useRouter();
@@ -77,10 +78,10 @@ export default function TheaterMode({ movie }: { movie: any }) {
         <div className="flex-1 bg-black relative flex flex-col">
           {videoUrl ? (
             <iframe
-              src={videoUrl}
+              src={formatVideoUrl(videoUrl)}
               className="w-full h-full border-none"
               allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-presentation"
+              sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
               title={`Watch ${titleDisplay}`}
             />
           ) : (

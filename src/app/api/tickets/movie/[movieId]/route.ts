@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { serverError } from "@/lib/apiResponse";
 
-export async function GET(req: Request, { params }: { params: Promise<{ movieId: string }> }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ movieId: string }> }) {
   try {
     const { movieId } = await params;
 
@@ -13,11 +14,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ movieId:
       },
     });
 
-    const bookedSeats = tickets.map(t => `${t.seatRow}${t.seatNumber}`);
+    const bookedSeats = tickets.map((t) => `${t.seatRow}${t.seatNumber}`);
 
     return NextResponse.json({ bookedSeats });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ message: "Failed to fetch booked seats" }, { status: 500 });
+    return serverError("Failed to fetch booked seats");
   }
 }

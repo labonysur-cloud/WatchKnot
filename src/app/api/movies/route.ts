@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/getAuthUser";
 import { prisma } from "@/lib/prisma";
+import { unauthorized, badRequest } from "@/lib/apiResponse";
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user) return unauthorized();
 
   const movies = await prisma.movie.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       tickets: {
-        where: { userId: user.uid }
-      }
-    }
+        where: { userId: user.uid },
+      },
+    },
   });
 
   return NextResponse.json({ movies });
@@ -20,12 +21,11 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const user = await getAuthUser(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user) return unauthorized();
 
   const { title, year, genre, posterUrl, rating, description, mediaType, seasons, videoUrl } = await req.json();
-  if (!title) return NextResponse.json({ message: "Title is required" }, { status: 400 });
+  if (!title) return badRequest("Title is required");
 
-  // Ensure user exists in DB
   await prisma.user.upsert({
     where: { id: user.uid },
     update: {},

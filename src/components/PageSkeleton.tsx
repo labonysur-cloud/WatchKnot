@@ -80,6 +80,21 @@ export function ProfileSkeleton() {
   );
 }
 
+export function PublicProfileSkeleton() {
+  return (
+    <div className="container mx-auto max-w-4xl space-y-8">
+      <div className="bg-card rounded-2xl p-8 border border-border flex flex-col sm:flex-row items-center gap-6">
+        <Skeleton className="w-24 h-24 rounded-full shrink-0" />
+        <div className="space-y-3 flex-1 w-full">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+      <CardGridSkeleton count={3} />
+    </div>
+  );
+}
+
 export function FriendsSkeleton() {
   return (
     <div className="space-y-6">

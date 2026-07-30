@@ -86,7 +86,7 @@ export default function Friends() {
         fetchFriends();
       } else {
         const data = await res.json();
-        toast({ title: "Error", description: data.message || "Failed to add friend", variant: "destructive" });
+        toast({ title: "Error", description: data.error || data.message || "Failed to add friend", variant: "destructive" });
       }
     } catch (err) {
       toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
