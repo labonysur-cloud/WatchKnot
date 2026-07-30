@@ -4,7 +4,7 @@ This document serves as a living blueprint and memory for AI agents and develope
 
 ## Project Overview
 WatchKnot is a full-stack Next.js social platform and virtual movie theater. It allows users to collect, review, and watch movies together, with a focus on a cozy, vintage-aesthetic design.
-**Key Tech Stack**: Next.js 16 (App Router), Neon (PostgreSQL), Prisma, Firebase Auth/Firestore/Storage, PeerJS (WebRTC voice), Groq API, Cloudinary, Tailwind CSS + shadcn/ui.
+**Key Tech Stack**: Next.js 16 (App Router), Neon (PostgreSQL), Prisma, Firebase Auth/Firestore/Storage, Groq API, Cloudinary, Tailwind CSS + shadcn/ui.
 
 ---
 
@@ -14,7 +14,6 @@ WatchKnot is a full-stack Next.js social platform and virtual movie theater. It 
 *   **Security**: Authenticated `/api/upload/signature`; validated `/api/user/sync` against Firebase token; admin emails configurable via `ADMIN_EMAILS` env var.
 *   **API consistency**: Standardized error responses to `{ error: string }` via `src/lib/apiResponse.ts`.
 *   **Auth profile**: `AuthContext` exposes `profile.isAdmin` and `profile.ticketCount` for Navbar and admin gating.
-*   **Watch rooms**: Integrated `ReactionOverlay` and `VoiceChat`; fixed countdown timer leak and missing `Check` icon import.
 *   **Cleanup**: Removed unused `ChatOverlay`, `ThemeProvider`, `page.module.css`, and UploadThing dependencies.
 *   **UX**: Added global `error.tsx` and `not-found.tsx` boundaries.
 
@@ -50,12 +49,7 @@ WatchKnot is a full-stack Next.js social platform and virtual movie theater. It 
 *   **Admin**: Set `ADMIN_EMAILS` (comma-separated) or `user.isAdmin` in database.
 *   **Uploads**: Cloudinary signatures require authenticated user.
 
-### 4. Real-time & Watch Rooms
-*   **Firestore**: Room state, chat (`messages` subcollection), voice peer discovery (`peerIds`).
-*   **PeerJS**: Voice chat mesh via WebRTC; Firestore for signaling only.
-*   **Video sync**: Countdown overlay prompts synchronized manual play (iframe embeds cannot be programmatically controlled).
-
-### 5. Next.js Considerations
+### 4. Next.js Considerations
 *   **Async Params**: Always `await params` before usage.
 *   **Vercel Timeouts**: Restrict external fetch timeouts (Groq, scraping) to prevent 504 errors.
 *   **Read `node_modules/next/dist/docs/`** before writing Next.js code — APIs differ from older versions.

@@ -41,6 +41,8 @@ export default function DownloadsPage() {
               src={playingMedia.videoUrl} 
               controls 
               autoPlay
+              playsInline
+              preload="auto"
               style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "black", borderRadius: "16px", border: "2px solid var(--color-border)" }}
             />
           </div>

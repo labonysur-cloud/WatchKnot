@@ -57,7 +57,6 @@ export default function TicketCard({ ticket, isNew = false, onShareWithFriend, c
   const ticketRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [creatingRoom, setCreatingRoom] = useState(false);
   const [currentEmbedUrl, setCurrentEmbedUrl] = useState<string | null>(ticket.embedUrl ?? null);
   const router = useRouter();
   const { user } = useAuth();
@@ -72,19 +71,6 @@ export default function TicketCard({ ticket, isNew = false, onShareWithFriend, c
     router.push(`/watch/${ticket.movieId}`);
   };
 
-  const handleWatchTogether = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user || !ticket.movieId) return;
-    setCreatingRoom(true);
-    try {
-      const newRoomId = Math.random().toString(36).substring(2, 10);
-      toast({ title: "Room created", description: "Share the invite link with friends" });
-      router.push(`/movies/${ticket.movieId}/room/${newRoomId}`);
-    } catch (err: any) {
-      toast({ title: "Couldn't create room", description: err.message, variant: "destructive" });
-    }
-    setCreatingRoom(false);
-  };
 
   const handleWebShare = async () => {
     if (navigator.share) {
@@ -446,12 +432,6 @@ export default function TicketCard({ ticket, isNew = false, onShareWithFriend, c
               <Play className="w-3 h-3 mr-1" /> Watch Now
             </Button>
           )}
-          {ticket.movieId && (
-            <Button variant="outline" size="sm" className="text-xs rounded-full" onClick={handleWatchTogether} disabled={creatingRoom}>
-              {creatingRoom ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Users className="w-3 h-3 mr-1" />}
-              Watch Together
-            </Button>
-          )}
           <Button variant="outline" size="sm" className="text-xs rounded-full" onClick={handleDownload} disabled={downloading}>
             <Download className="w-3 h-3 mr-1" />
             {downloading ? "Saving..." : "Save as PNG"}
@@ -478,11 +458,6 @@ export default function TicketCard({ ticket, isNew = false, onShareWithFriend, c
           {true && (
             <Button variant="warm" size="sm" className="text-[10px] h-7 px-2 rounded-full" onClick={(e) => { e.stopPropagation(); handleWatchClick(); }}>
               <Play className="w-3 h-3 mr-0.5" /> Watch
-            </Button>
-          )}
-          {ticket.movieId && (
-            <Button variant="ghost" size="sm" className="text-[10px] h-7 px-2" onClick={handleWatchTogether} disabled={creatingRoom}>
-              {creatingRoom ? <Loader2 className="w-3 h-3 mr-0.5 animate-spin" /> : <Users className="w-3 h-3 mr-0.5" />} Together
             </Button>
           )}
           <Button variant="ghost" size="sm" className="text-[10px] h-7 px-2" onClick={handleDownload} disabled={downloading}>

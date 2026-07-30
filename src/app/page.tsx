@@ -5,12 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Film, Ticket, BookHeart, Popcorn, Heart, Play, Star, Users, Radio, Loader2 } from "lucide-react";
+import { Film, Ticket, BookHeart, Popcorn, Heart, Play, Star, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/lib/firebase";
-import { collection, query, limit, onSnapshot } from "firebase/firestore";
 
 const features = [
   {
@@ -49,8 +46,6 @@ export default function Home() {
 
   const [playableMovies, setPlayableMovies] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [activeRooms, setActiveRooms] = useState<any[]>([]);
-  const [roomsLoading, setRoomsLoading] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -66,16 +61,6 @@ export default function Home() {
     }
   }, [user, authLoading, router]);
 
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, "watchRooms"), limit(6));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setActiveRooms(rooms);
-      setRoomsLoading(false);
-    });
-    return () => unsub();
-  }, [user]);
 
   if (authLoading || !user) {
     return (
@@ -254,58 +239,6 @@ export default function Home() {
         </section>
       ) : null}
 
-      {/* Active Watch Rooms */}
-      {!roomsLoading && activeRooms.length > 0 && (
-        <section className="py-12 sm:py-20 px-4">
-          <div className="container mx-auto max-w-5xl">
-            <motion.h2
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-3 sm:mb-4 text-foreground"
-            >
-              Live Now <Radio className="inline w-5 sm:w-6 h-5 sm:h-6 text-primary animate-pulse" />
-            </motion.h2>
-            <p className="text-center font-handwritten text-lg text-primary/60 mb-8 sm:mb-12">
-              Friends are watching — jump in and join them!
-            </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {activeRooms.map((room, i) => (
-                <motion.div
-                  key={room.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <Link
-                    href={`/movies/${room.movieId}/room/${room.id}`}
-                    className="block group cute-card bg-card rounded-2xl p-4 sm:p-5 border-2 border-primary/10 hover:border-primary/30"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-display text-base sm:text-lg font-semibold text-foreground truncate flex-1 min-w-0">
-                        {room.movieTitle}
-                      </h3>
-                      <Badge variant="secondary" className="ml-2 shrink-0 rounded-full">
-                        <Users className="w-3 h-3 mr-1" />
-                        {room.participants?.length || 1}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-sm text-muted-foreground">Watching now</span>
-                    </div>
-                    <div className="mt-3 flex items-center gap-1 text-sm text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Play className="w-4 h-4" />
-                      Join room
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       <footer className="border-t-2 border-primary/10 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm bg-gingham">
         <p>Made with <Heart className="w-3 h-3 inline text-primary fill-primary" /> for movie nights with friends</p>

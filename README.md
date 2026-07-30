@@ -14,25 +14,19 @@ A fully persisted, algorithmic social feed where users can write journal entries
 *   **Privacy Controls**: Post visibility can be finely tuned to "Only Me", "Specific Friends", or "All Friends".
 *   **Moderation**: Users maintain full control over their content, including the ability to delete posts, hide comments, and block malicious accounts.
 
-### 2. Synchronized Watch Parties
-An integrated "Watch Room" experience designed for remote streaming with friends.
-*   **Real-time Synchronization**: Coordinated video playback ensuring that play, pause, and seek actions are perfectly synced across all connected clients via WebRTC.
-*   **Communication Layer**: Integrated chatbox overlay supporting text, GIFs, and real-time custom reactions.
-*   **Lobby System**: Active watch rooms are broadcasted to the home page lobby, allowing authorized friends to seamlessly join ongoing sessions.
-
-### 3. Progressive Web App and Offline Downloads
+### 2. Progressive Web App and Offline Downloads
 WatchKnot is designed as a standalone, installable Progressive Web App (PWA).
 *   **Device Caching**: Utilizes a custom Service Worker and the browser Cache API to securely download large video blobs directly to the user's device.
 *   **TV Show Support**: The database architecture natively supports Seasons and Episodes, allowing users to download individual episodes or binge entire seasons offline.
 *   **Offline Hub**: A dedicated downloads management page where users can access, view, and delete their cached media without an active internet connection.
 
-### 4. Interactive Digital Ticketing
+### 3. Interactive Digital Ticketing
 Before accessing a Watch Room, users must acquire a virtual ticket.
 *   **CSS Architecture**: Tickets are rendered dynamically using pure HTML and CSS, featuring a vintage film-strip aesthetic, accurate typography, and generated barcodes.
 *   **Seat Allocation**: Users select specific rows and seats, which are locked transactionally to prevent double-booking.
 *   **AI Personalization**: Integrated AI generates personalized, context-aware messages on the ticket based on the specific movie's genre and mood.
 
-### 5. Administrative Control Panel
+### 4. Administrative Control Panel
 A robust admin dashboard ensuring platform safety and content standards.
 *   **User Management**: Administrators can view user statistics, track movie uploads, and instantly revoke access by banning accounts.
 *   **Content Moderation**: Global privileges to edit or permanently delete any movie or post on the platform.
@@ -45,7 +39,6 @@ A robust admin dashboard ensuring platform safety and content standards.
 *   **Database**: Neon (Serverless PostgreSQL)
 *   **ORM**: Prisma
 *   **Authentication**: Firebase Authentication and Firebase Admin SDK
-*   **Real-time Communication**: PeerJS (WebRTC) for synchronized video playback
 *   **Media Storage**: Firebase Storage for user-uploaded media
 *   **AI Integration**: Groq SDK for natural language processing and ticket personalization
 *   **Icons**: Lucide React
@@ -57,7 +50,6 @@ The application follows a modern serverless architecture utilizing Next.js Serve
 1.  **Data Layer**: Prisma acts as the bridge to a Neon Postgres database. The schema is highly relational, connecting Users to Movies, Tickets, Posts, Friendships, and nested media structures (Seasons and Episodes).
 2.  **Authentication Layer**: Authentication is handled purely through Firebase. The frontend maintains the session via the Firebase Client SDK, while the backend API routes securely verify identity using the Firebase Admin SDK by extracting and decoding the Bearer token from the request headers.
 3.  **Media and PWA Layer**: Video playback relies on HTML5 video elements. For offline capabilities, a custom Service Worker intercepts `fetch` requests. When a user downloads a movie, the file is streamed into the browser's Cache API, while metadata is stored in LocalStorage.
-4.  **Real-time Layer**: WebRTC data channels are utilized for the Watch Room. By leveraging PeerJS, clients establish direct peer-to-peer connections, minimizing server latency during synchronized playback commands.
 
 ## Local Development Setup
 

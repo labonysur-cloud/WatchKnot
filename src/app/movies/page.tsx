@@ -415,14 +415,6 @@ export default function Movies() {
                           <Button variant="warm" size="sm" className="flex-1 text-xs rounded-xl" onClick={(e) => { e.stopPropagation(); router.push(`/watch/${movie.id}`); }}>
                             <Play className="w-3 h-3 mr-1" /> Watch
                           </Button>
-                          <Button variant="outline" size="sm" className="flex-1 text-xs rounded-xl" onClick={async (e) => { 
-                            e.stopPropagation(); 
-                            const newRoomId = Math.random().toString(36).substring(2, 10);
-                            toast({ title: "Room created", description: "Share the link with friends!" });
-                            router.push(`/movies/${movie.id}/room/${newRoomId}`);
-                          }}>
-                            <Users className="w-3 h-3 mr-1" /> Together
-                          </Button>
                           <Button variant="outline" size="sm" className="px-3 rounded-xl bg-card" onClick={(e) => { e.stopPropagation(); router.push(`/movies/${movie.id}/ticket`)}}>
                             <Ticket className="w-3.5 h-3.5 text-primary" />
                           </Button>
