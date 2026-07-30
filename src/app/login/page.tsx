@@ -115,7 +115,8 @@ export default function LoginPage() {
       });
       router.push("/");
     } catch (err: any) {
-      setError("Google sign in failed. Please try again.");
+      console.error("Google login error:", err);
+      setError(err?.message || "Google sign in failed. Please try again.");
       setLoading(false);
     }
   };
