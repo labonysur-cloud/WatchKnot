@@ -15,10 +15,11 @@ export default {
     extend: {
       fontFamily: {
         display: ['"Starify"', '"Playfair Display"', 'serif'],
-        body: ['"Starify"', '"Nunito"', 'sans-serif'],
+        body: ['"Fony"', '"Starify"', '"Nunito"', 'sans-serif'],
         handwritten: ['"Starify"', '"Caveat"', 'cursive'],
         quirky: ['"Starify"', '"Kalam"', '"Caveat"', 'cursive'],
         starify: ['"Starify"', 'cursive'],
+        fony: ['"Fony"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
