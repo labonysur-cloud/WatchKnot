@@ -17,7 +17,8 @@ export default {
         display: ['"Playfair Display"', 'serif'],
         body: ['"Nunito"', 'sans-serif'],
         handwritten: ['"Caveat"', 'cursive'],
-        quirky: ['"Kalam"', '"Caveat"', 'cursive'],
+        quirky: ['"Starify"', '"Kalam"', '"Caveat"', 'cursive'],
+        starify: ['"Starify"', 'cursive'],
       },
       colors: {
         border: "hsl(var(--border))",
