@@ -44,7 +44,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 {ticket.movie.posterUrl ? (
                   <img src={ticket.movie.posterUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <span style={{ color: "white", fontSize: "3rem" }}>🎬</span>
+                  <span style={{ color: "white", fontSize: "3rem" }}>Ticket</span>
                 )}
               </div>
             </div>

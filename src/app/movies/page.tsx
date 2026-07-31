@@ -107,7 +107,7 @@ export default function Movies() {
         totalSeasons: data.totalSeasons ? String(data.totalSeasons) : prev.totalSeasons,
       }));
       setShowForm(true);
-      toast({ title: "✨ Found it!", description: `Filled in details for "${data.title || input}"` });
+      toast({ title: "Found it!", description: `Filled in details for "${data.title || input}"` });
     } catch (err: any) {
       toast({ title: "Couldn't identify", description: err.message || "Try entering details manually", variant: "destructive" });
       if (!isUrl(input)) {
@@ -226,7 +226,7 @@ export default function Movies() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8 sm:mb-10">
           <div>
             <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">Our Movies</h1>
-            <p className="text-muted-foreground mt-1 text-sm sm:text-base">The collection we're building together 🍿</p>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">The collection we're building together</p>
           </div>
         </div>
 
@@ -239,7 +239,7 @@ export default function Movies() {
               className="overflow-hidden mb-8 sm:mb-10"
             >
               <div className="bg-card rounded-2xl p-4 sm:p-6 border-2 border-primary/10 max-w-lg mx-auto text-center">
-                <h3 className="font-display text-lg font-semibold text-foreground mb-1">Add a movie ♡</h3>
+                <h3 className="font-display text-lg font-semibold text-foreground mb-1">Add a movie</h3>
                 <p className="text-sm text-muted-foreground mb-4">Paste a link or type a title — AI will figure out the rest!</p>
                 <div className="flex gap-2">
                   <Input
@@ -328,7 +328,7 @@ export default function Movies() {
           <div className="text-center py-20">
             <Film className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
             <h2 className="font-quirky text-3xl font-bold mb-2">No movies here...</h2>
-            <p className="text-muted-foreground mb-6 font-quirky text-lg">Add a movie to get started! 🎬</p>
+            <p className="text-muted-foreground mb-6 font-quirky text-lg">Add a movie to get started!</p>
             <Button variant="default" onClick={() => setShowForm(true)} className="btn-handdrawn-primary">
               <Plus className="w-4 h-4 mr-1" /> Add Movie
             </Button>
@@ -449,7 +449,7 @@ export default function Movies() {
               <Pencil className="w-4 h-4 text-primary" /> Edit movie details
             </DialogTitle>
             <DialogDescription>
-              Touch up the title, poster, link or any detail — changes are saved to the shared shelf. ♡
+              Touch up the title, poster, link or any detail — changes are saved to the shared shelf.
             </DialogDescription>
           </DialogHeader>
 

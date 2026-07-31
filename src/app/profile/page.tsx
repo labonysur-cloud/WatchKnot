@@ -136,7 +136,7 @@ export default function Profile() {
                 </AvatarFallback>
               </Avatar>
               <p className="absolute bottom-2 left-0 right-0 text-center font-handwritten text-base text-primary truncate px-3">
-                {displayName || "you ♡"}
+                {displayName || "you"}
               </p>
             </div>
           </div>

@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['"Starify"', '"Playfair Display"', 'serif'],
-        body: ['"Nunito"', 'sans-serif'],
+        body: ['"Starify"', '"Nunito"', 'sans-serif'],
         handwritten: ['"Starify"', '"Caveat"', 'cursive'],
         quirky: ['"Starify"', '"Kalam"', '"Caveat"', 'cursive'],
         starify: ['"Starify"', 'cursive'],

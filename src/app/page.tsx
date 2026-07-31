@@ -15,28 +15,28 @@ const features = [
     title: "Movie Collection",
     desc: "Save your favorites and build a shared watchlist with friends.",
     to: "/movies",
-    emoji: "🎬",
+    emoji: "",
   },
   {
     icon: Ticket,
     title: "Get Your Ticket",
     desc: "AI-generated vintage tickets — grab one before each movie night!",
     to: "/tickets",
-    emoji: "🎫",
+    emoji: "",
   },
   {
     icon: BookHeart,
     title: "Movie Journal",
     desc: "Write down your thoughts, feelings, and favorite moments.",
     to: "/feed",
-    emoji: "📝",
+    emoji: "",
   },
   {
     icon: Users,
     title: "Friends",
     desc: "Connect with your movie crew and share tickets together.",
     to: "/users",
-    emoji: "💕",
+    emoji: "",
   },
 ];
 
@@ -109,7 +109,7 @@ export default function Home() {
 
           <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
             A cozy space for friends to share movie nights, collect tickets,
-            and journal beautiful memories — no matter the distance 💌
+            and journal beautiful memories — no matter the distance
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
@@ -141,7 +141,7 @@ export default function Home() {
             How It Works
           </motion.h2>
           <p className="text-center font-handwritten text-lg sm:text-xl text-primary/60 mb-8 sm:mb-12">
-            Four simple steps to the coziest movie night ever ♡
+            Four simple steps to the coziest movie night ever
           </p>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
@@ -157,7 +157,6 @@ export default function Home() {
                   href={f.to}
                   className="block group cute-card bg-card rounded-2xl p-4 sm:p-6 border-2 border-primary/10 hover:border-primary/30 h-full"
                 >
-                  <div className="text-2xl sm:text-3xl mb-2">{f.emoji}</div>
                   <h3 className="font-display text-sm sm:text-lg font-semibold mb-1 sm:mb-1.5 text-foreground">{f.title}</h3>
                   <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed hidden sm:block">{f.desc}</p>
                 </Link>
@@ -189,7 +188,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-3 sm:mb-4 text-foreground"
             >
-              Watch Now 🎬
+              Watch Now
             </motion.h2>
             <p className="text-center font-handwritten text-lg text-primary/60 mb-8 sm:mb-12">
               Movies you have tickets for — jump right in!
@@ -242,7 +241,7 @@ export default function Home() {
 
       <footer className="border-t-2 border-primary/10 py-6 sm:py-8 text-center text-muted-foreground text-xs sm:text-sm bg-gingham">
         <p>Made with <Heart className="w-3 h-3 inline text-primary fill-primary" /> for movie nights with friends</p>
-        <p className="font-handwritten text-primary/50 mt-1">~ WatchKnot ♡ ~</p>
+        <p className="font-handwritten text-primary/50 mt-1">~ WatchKnot ~</p>
       </footer>
     </div>
   );

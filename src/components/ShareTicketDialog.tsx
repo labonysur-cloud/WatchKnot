@@ -28,7 +28,7 @@ export default function ShareTicketDialog({ ticketId, movieTitle, open, onClose 
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
-          content: `I just booked my ticket for ${movieTitle}! 🍿🎟️`,
+          content: `I just booked my ticket for ${movieTitle}!`,
           ticketId 
         })
       });
