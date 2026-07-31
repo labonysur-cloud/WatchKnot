@@ -30,15 +30,15 @@ export default function Navbar() {
   const navLinks = isAdmin ? [...links, { to: "/admin", label: "Admin", icon: ShieldCheck }] : links;
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/95 border-b-2 border-primary/20 shadow-sm">
-      <div className="container mx-auto px-4 flex items-center justify-between h-14 sm:h-16">
-        <Link href="/" className="flex items-center gap-2 group">
-          <Heart className="w-5 h-5 text-primary fill-primary group-hover:scale-110 transition-transform" />
-          <span className="font-display text-lg sm:text-xl font-bold text-primary">
-            WatchKnot
-          </span>
-          <span className="text-xs font-handwritten text-rose hidden sm:inline">♡</span>
-        </Link>
+    <div className="px-4 py-4">
+      <nav className="sticky top-4 z-50 backdrop-blur-md bg-card/95 border-2 border-border rounded-xl shadow-[4px_4px_0px_var(--border)] max-w-5xl mx-auto">
+        <div className="px-4 flex items-center justify-between h-14 sm:h-16">
+          <Link href="/" className="flex items-center gap-2 group">
+            <Heart className="w-6 h-6 text-primary fill-primary group-hover:scale-110 transition-transform -rotate-12" />
+            <span className="font-quirky text-2xl sm:text-3xl font-bold text-foreground">
+              WatchKnot
+            </span>
+          </Link>
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-0.5">
@@ -47,10 +47,10 @@ export default function Navbar() {
               key={to}
               href={to}
               className={cn(
-                "relative flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all",
+                "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-lg font-quirky font-bold transition-all border-2 border-transparent",
                 pathname === to
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  ? "bg-secondary text-foreground border-border shadow-[2px_2px_0px_var(--border)] -rotate-1"
+                  : "text-muted-foreground hover:text-foreground hover:rotate-2 hover:bg-secondary/50"
               )}
             >
               <Icon className="w-4 h-4" />
@@ -147,6 +147,7 @@ export default function Navbar() {
           )}
         </div>
       )}
-    </nav>
+      </nav>
+    </div>
   );
 }

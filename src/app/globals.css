@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Nunito:wght@300;400;500;600;700&family=Caveat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Nunito:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,99 +6,66 @@
 
 @layer base {
   :root {
-    --background: 10 40% 96%;
-    --foreground: 350 30% 18%;
+    --background: 345 30% 95%; /* Soft dusty pink background */
+    --foreground: 0 0% 10%; /* Dark charcoal/black for text */
 
-    --card: 10 45% 93%;
-    --card-foreground: 350 30% 18%;
+    --card: 0 0% 100%; /* White paper */
+    --card-foreground: 0 0% 10%;
 
-    --popover: 10 40% 96%;
-    --popover-foreground: 350 30% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 350 60% 42%;
-    --primary-foreground: 10 50% 97%;
+    --primary: 340 60% 60%; /* Olivia pop pink */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 10 50% 88%;
-    --secondary-foreground: 350 30% 18%;
+    --secondary: 345 40% 90%; /* Lighter pink for active states */
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 10 25% 90%;
-    --muted-foreground: 350 15% 45%;
+    --muted: 340 10% 90%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 350 55% 55%;
-    --accent-foreground: 10 50% 97%;
+    --accent: 0 0% 10%; /* Black accents for hand-drawn look */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 350 30% 82%;
-    --input: 350 25% 84%;
-    --ring: 350 60% 42%;
+    --border: 0 0% 10%; /* Black borders for sketch effect */
+    --input: 0 0% 10%;
+    --ring: 340 60% 60%;
 
-    --radius: 0.75rem;
-
-    --gold: 35 70% 52%;
-    --gold-foreground: 10 50% 97%;
-    --rose: 350 50% 65%;
-    --rose-foreground: 350 30% 18%;
-    --warm: 15 55% 50%;
-
-    --gingham: 350 60% 42%;
-
-    --sidebar-background: 10 45% 93%;
-    --sidebar-foreground: 350 30% 18%;
-    --sidebar-primary: 350 60% 42%;
-    --sidebar-primary-foreground: 10 50% 97%;
-    --sidebar-accent: 10 25% 90%;
-    --sidebar-accent-foreground: 350 30% 18%;
-    --sidebar-border: 350 30% 82%;
-    --sidebar-ring: 350 60% 42%;
+    --radius: 0.5rem; /* slightly less rounded, more blocky */
   }
 
   .dark {
-    --background: 350 25% 8%;
-    --foreground: 10 30% 90%;
+    /* For dark mode, keep it a deep moody purple/black */
+    --background: 280 40% 10%; 
+    --foreground: 345 30% 95%;
 
-    --card: 350 22% 12%;
-    --card-foreground: 10 30% 90%;
+    --card: 280 30% 15%;
+    --card-foreground: 345 30% 95%;
 
-    --popover: 350 25% 8%;
-    --popover-foreground: 10 30% 90%;
+    --popover: 280 30% 15%;
+    --popover-foreground: 345 30% 95%;
 
-    --primary: 350 55% 50%;
-    --primary-foreground: 10 50% 97%;
+    --primary: 340 70% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 350 20% 18%;
-    --secondary-foreground: 10 30% 90%;
+    --secondary: 280 25% 20%;
+    --secondary-foreground: 345 30% 95%;
 
-    --muted: 350 15% 16%;
-    --muted-foreground: 10 15% 55%;
+    --muted: 280 20% 25%;
+    --muted-foreground: 280 15% 60%;
 
-    --accent: 350 50% 58%;
-    --accent-foreground: 10 50% 97%;
+    --accent: 345 30% 95%; /* White accents in dark mode */
+    --accent-foreground: 280 40% 10%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 350 15% 20%;
-    --input: 350 15% 20%;
-    --ring: 350 55% 50%;
-
-    --gold: 35 70% 52%;
-    --gold-foreground: 10 50% 97%;
-    --rose: 350 45% 55%;
-    --rose-foreground: 10 30% 90%;
-    --warm: 15 55% 50%;
-
-    --gingham: 350 55% 50%;
-
-    --sidebar-background: 350 22% 12%;
-    --sidebar-foreground: 10 30% 90%;
-    --sidebar-primary: 350 55% 50%;
-    --sidebar-primary-foreground: 10 50% 97%;
-    --sidebar-accent: 350 15% 16%;
-    --sidebar-accent-foreground: 10 30% 90%;
-    --sidebar-border: 350 15% 20%;
-    --sidebar-ring: 350 55% 50%;
+    --border: 345 30% 95%; /* White borders */
+    --input: 345 30% 95%;
+    --ring: 340 70% 60%;
   }
 }
 
@@ -109,87 +76,119 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    /* Notebook lined paper background */
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 31px,
+      rgba(0, 0, 0, 0.08) 31px,
+      rgba(0, 0, 0, 0.08) 32px
+    );
+    background-size: 100% 32px;
+    background-attachment: local;
+  }
+
+  /* In dark mode, slightly different lines */
+  .dark body {
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 31px,
+      rgba(255, 255, 255, 0.08) 31px,
+      rgba(255, 255, 255, 0.08) 32px
+    );
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+    @apply font-quirky;
+    letter-spacing: 0.02em;
   }
 }
 
-/* Gingham pattern background */
-.bg-gingham {
-  background-image:
-    linear-gradient(45deg, hsl(var(--gingham) / 0.12) 25%, transparent 25%),
-    linear-gradient(-45deg, hsl(var(--gingham) / 0.12) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, hsl(var(--gingham) / 0.12) 75%),
-    linear-gradient(-45deg, transparent 75%, hsl(var(--gingham) / 0.12) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+/* Washi Tape Effect */
+.washi-tape {
+  position: relative;
+}
+.washi-tape::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 100px;
+  height: 25px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 10;
+  pointer-events: none;
 }
 
-/* Polka dot pattern */
-.bg-polka {
-  background-image: radial-gradient(circle, hsl(var(--rose) / 0.2) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+.washi-tape-pink::before {
+  background-color: rgba(236, 72, 153, 0.4); /* pink-500 with opacity */
 }
 
-/* Cute scallop border */
-.border-scallop {
-  --scallop-size: 10px;
-  mask-image: radial-gradient(circle at 50% 0%, transparent 35%, black 36%);
-  mask-size: var(--scallop-size) var(--scallop-size);
-  mask-position: 50% 100%;
-  mask-repeat: repeat-x;
+/* Paperclip Effect */
+.paperclip-top-right {
+  position: relative;
+}
+.paperclip-top-right::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: 20px;
+  width: 20px;
+  height: 60px;
+  border: 3px solid #db2777; /* pink paperclip */
+  border-radius: 10px;
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  transform: rotate(15deg);
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 2px 2px 2px rgba(0,0,0,0.1);
+}
+
+/* Hand-drawn button style */
+.btn-handdrawn {
+  @apply bg-transparent border-2 border-border text-foreground font-quirky font-bold px-6 py-2 transition-all;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  box-shadow: 2px 2px 0px var(--border);
+}
+
+.btn-handdrawn:hover {
+  transform: translateY(-2px) rotate(-1deg);
+  box-shadow: 4px 4px 0px var(--border);
+}
+
+.btn-handdrawn-primary {
+  @apply bg-primary text-primary-foreground border-primary border-2 font-quirky font-bold px-6 py-2 transition-all;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  box-shadow: 2px 2px 0px var(--primary);
+}
+
+.btn-handdrawn-primary:hover {
+  transform: translateY(-2px) rotate(-1deg);
+  box-shadow: 4px 4px 0px var(--border);
+  background-color: var(--primary);
+}
+
+/* Cute card hover effect - Polaroid style */
+.polaroid-card {
+  @apply bg-card p-3 pb-8 border-2 border-border transition-all relative;
+  box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+}
+
+.polaroid-card:hover {
+  transform: translateY(-5px) rotate(1deg) scale(1.02) !important;
+  box-shadow: 8px 8px 0px rgba(0,0,0,0.15);
+  z-index: 10;
 }
 
 @layer utilities {
-  .text-gradient-gold {
-    background: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--warm)), hsl(var(--rose)));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .font-quirky {
+    font-family: 'Kalam', 'Caveat', cursive;
   }
-
-  .bg-ticket {
-    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--secondary)));
-    border: 2px dashed hsl(var(--accent));
-  }
-
-  .shimmer {
-    background: linear-gradient(
-      110deg,
-      transparent 25%,
-      hsl(var(--rose) / 0.15) 50%,
-      transparent 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 3s ease-in-out infinite;
-  }
-
   .font-handwritten {
     font-family: 'Caveat', cursive;
   }
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Cute card hover effect */
-.cute-card {
-  transition: all 0.3s ease;
-}
-.cute-card:hover {
-  transform: translateY(-4px) rotate(-0.5deg);
-  box-shadow: 0 12px 32px -8px hsl(var(--primary) / 0.2);
 }

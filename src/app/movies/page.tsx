@@ -21,6 +21,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import CollectionsList from "@/components/CollectionsList";
 
 function getMoviePoster(posterUrl: string): string {
   return posterUrl || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=600&fit=crop";
@@ -35,6 +36,7 @@ export default function Movies() {
 
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: "", genre: "", year: "", description: "", posterUrl: "", watchUrl: "", embedUrl: "", rating: "", totalSeasons: "" });
@@ -64,6 +66,10 @@ export default function Movies() {
       setLoading(false);
     }
   };
+
+  const displayedMovies = selectedCollectionId 
+    ? movies.filter(m => m.collections?.some((c: any) => c.id === selectedCollectionId))
+    : movies;
 
   const isUrl = (str: string) => /^https?:\/\//i.test(str.trim()) || /^www\./i.test(str.trim());
 
@@ -124,7 +130,7 @@ export default function Movies() {
         posterUrl: form.posterUrl || undefined,
         videoUrl: form.embedUrl || undefined,
         rating: form.rating ? parseFloat(form.rating) : undefined,
-        total_seasons: form.totalSeasons ? parseInt(form.totalSeasons) : undefined,
+        seasons: form.totalSeasons ? parseInt(form.totalSeasons) : undefined,
       };
 
       const res = await fetch("/api/movies", {
@@ -169,9 +175,9 @@ export default function Movies() {
       year: m.year ? String(m.year) : "",
       description: m.description || "",
       posterUrl: m.posterUrl || "",
-      embedUrl: m.embed_url || "",
+      embedUrl: m.videoUrl || "",
       rating: m.rating ? String(m.rating) : "",
-      totalSeasons: m.total_seasons ? String(m.total_seasons) : "",
+      totalSeasons: m.seasons ? String(m.seasons) : "",
     });
   };
 
@@ -187,9 +193,9 @@ export default function Movies() {
         year: editForm.year,
         description: editForm.description || null,
         posterUrl: editForm.posterUrl || null,
-        embed_url: editForm.embedUrl || null,
+        videoUrl: editForm.embedUrl || null,
         rating: editForm.rating ? parseFloat(editForm.rating) : null,
-        total_seasons: editForm.totalSeasons ? parseInt(editForm.totalSeasons) : null,
+        seasons: editForm.totalSeasons ? parseInt(editForm.totalSeasons) : null,
       };
 
       const res = await fetch(`/api/movies/${editing.id}`, {
@@ -315,19 +321,21 @@ export default function Movies() {
           )}
         </AnimatePresence>
 
+        <CollectionsList onCollectionSelect={setSelectedCollectionId} />
+
         {/* Movie Grid */}
-        {movies.length === 0 ? (
+        {displayedMovies.length === 0 ? (
           <div className="text-center py-20">
             <Film className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-            <h2 className="font-display text-2xl font-semibold mb-2">No movies yet...</h2>
-            <p className="text-muted-foreground mb-6">Add your first movie to get started! 🎬</p>
-            <Button variant="default" onClick={() => setShowForm(true)} className="bg-warm text-white hover:bg-warm/90">
+            <h2 className="font-quirky text-3xl font-bold mb-2">No movies here...</h2>
+            <p className="text-muted-foreground mb-6 font-quirky text-lg">Add a movie to get started! 🎬</p>
+            <Button variant="default" onClick={() => setShowForm(true)} className="btn-handdrawn-primary">
               <Plus className="w-4 h-4 mr-1" /> Add Movie
             </Button>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {movies.map((movie, i) => {
+            {displayedMovies.map((movie, i) => {
               return (
                 <motion.div
                   key={movie.id}
@@ -336,9 +344,9 @@ export default function Movies() {
                   transition={{ delay: i * 0.08 }}
                   className="group"
                 >
-                  <div className="bg-card rounded-2xl border border-border overflow-hidden hover:border-accent hover:shadow-lg transition-all relative">
+                  <div className={`polaroid-card ${i % 2 === 0 ? 'washi-tape' : 'washi-tape washi-tape-pink paperclip-top-right'}`}>
                     <div 
-                      className="aspect-[2/3] relative overflow-hidden cursor-pointer"
+                      className="aspect-[2/3] relative overflow-hidden cursor-pointer rounded-sm border-2 border-border"
                       onClick={() => router.push(`/movies/${movie.id}`)}
                     >
                       <img
@@ -400,29 +408,29 @@ export default function Movies() {
                         </span>
                       </div>
                     </div>
-                    <div className="p-3 sm:p-4 pb-0">
-                      <h3 className="font-display text-base sm:text-lg font-semibold text-foreground truncate">{movie.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2 min-h-[40px]">{movie.description}</p>
-                      <div className="flex items-center justify-between mt-2 sm:mt-3 text-xs text-muted-foreground">
+                    <div className="p-3 sm:p-4 pb-0 text-center">
+                      <h3 className="font-quirky text-xl font-bold text-foreground truncate">{movie.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2 min-h-[40px] font-handwritten text-lg leading-tight">{movie.description}</p>
+                      <div className="flex items-center justify-center mt-2 sm:mt-3 text-xs text-muted-foreground font-quirky font-bold">
                         <span>{movie.year}</span>
                       </div>
                     </div>
                     
                     {/* Action Buttons */}
-                    <div className="p-3 sm:p-4 pt-3 mt-3 border-t border-border bg-muted/10">
+                    <div className="p-3 sm:p-4 pt-3 mt-3 flex justify-center">
                       {movie.tickets && movie.tickets.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="warm" size="sm" className="flex-1 text-xs rounded-xl" onClick={(e) => { e.stopPropagation(); router.push(`/watch/${movie.id}`); }}>
+                        <div className="flex flex-wrap gap-2 justify-center w-full">
+                          <button className="btn-handdrawn-primary flex-1 flex items-center justify-center text-sm" onClick={(e) => { e.stopPropagation(); router.push(`/watch/${movie.id}`); }}>
                             <Play className="w-3 h-3 mr-1" /> Watch
-                          </Button>
-                          <Button variant="outline" size="sm" className="px-3 rounded-xl bg-card" onClick={(e) => { e.stopPropagation(); router.push(`/movies/${movie.id}/ticket`)}}>
-                            <Ticket className="w-3.5 h-3.5 text-primary" />
-                          </Button>
+                          </button>
+                          <button className="btn-handdrawn px-3 flex items-center justify-center" onClick={(e) => { e.stopPropagation(); router.push(`/movies/${movie.id}/ticket`)}}>
+                            <Ticket className="w-4 h-4 text-primary" />
+                          </button>
                         </div>
                       ) : (
-                        <Button variant="outline" size="sm" className="w-full text-xs rounded-xl border-primary/20 hover:bg-primary/5 hover:text-primary" onClick={(e) => { e.stopPropagation(); router.push(`/movies/${movie.id}/book`); }}>
-                          <Ticket className="w-3.5 h-3.5 mr-1.5 text-primary" /> Get Ticket to Watch
-                        </Button>
+                        <button className="btn-handdrawn w-full text-sm flex items-center justify-center" onClick={(e) => { e.stopPropagation(); router.push(`/movies/${movie.id}/book`); }}>
+                          <Ticket className="w-4 h-4 mr-1.5 text-primary" /> Get Ticket
+                        </button>
                       )}
                     </div>
                   </div>

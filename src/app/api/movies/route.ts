@@ -13,6 +13,7 @@ export async function GET(req: Request) {
       tickets: {
         where: { userId: user.uid },
       },
+      collections: true,
     },
   });
 

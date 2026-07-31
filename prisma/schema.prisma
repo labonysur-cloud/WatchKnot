@@ -57,6 +57,7 @@ model User {
   blocksReceived  Block[] @relation("Blocked")
   friendshipsInitiated Friendship[] @relation("UserFriendshipsInitiated")
   friendshipsReceived  Friendship[] @relation("UserFriendshipsReceived")
+  collections   Collection[]
 }
 
 model VerificationToken {
@@ -87,6 +88,18 @@ model Movie {
   tickets      Ticket[]
   posts        Post[]
   seasonList   Season[]
+  collections  Collection[]
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  coverUrl    String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movies      Movie[]
+  createdAt   DateTime @default(now())
 }
 
 model Season {
