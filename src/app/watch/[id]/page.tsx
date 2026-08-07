@@ -2,14 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import TheaterMode from "./TheaterMode";
 import { Suspense } from "react";
-import type { Viewport } from "next";
-
-export const viewport: Viewport = {
-  width: 1024,
-  initialScale: 1,
-  maximumScale: 1,
-};
-
 export const dynamic = "force-dynamic";
 
 export default async function WatchPage({ params }: { params: Promise<{ id: string }> }) {

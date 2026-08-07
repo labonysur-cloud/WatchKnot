@@ -5,6 +5,11 @@ import Navbar from "@/components/Navbar";
 import PwaRegister from "@/components/PwaRegister";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: 1024,
+};
 
 export const metadata: Metadata = {
   title: "WatchKnot | Cozy Movie Journal & Watch Party",

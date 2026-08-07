@@ -89,26 +89,32 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
-    /* Notebook lined paper background */
-    background-image: repeating-linear-gradient(
-      transparent,
-      transparent 31px,
-      rgba(0, 0, 0, 0.08) 31px,
-      rgba(0, 0, 0, 0.08) 32px
-    );
-    background-size: 100% 32px;
-    background-attachment: local;
+    @apply bg-background text-foreground font-body antialiased selection:bg-primary/20;
+    /* Notebook lined paper background with subtle glow/vignette */
+    background-image: 
+      radial-gradient(circle at top, rgba(255,255,255,0.8) 0%, transparent 60%),
+      repeating-linear-gradient(
+        transparent,
+        transparent 31px,
+        rgba(0, 0, 0, 0.05) 31px,
+        rgba(0, 0, 0, 0.05) 32px
+      );
+    background-size: 100% 100vh, 100% 32px;
+    background-attachment: fixed, local;
   }
 
   /* In dark mode, slightly different lines */
   .dark body {
-    background-image: repeating-linear-gradient(
-      transparent,
-      transparent 31px,
-      rgba(255, 255, 255, 0.08) 31px,
-      rgba(255, 255, 255, 0.08) 32px
-    );
+    background-image: 
+      radial-gradient(circle at top, rgba(255,255,255,0.05) 0%, transparent 60%),
+      repeating-linear-gradient(
+        transparent,
+        transparent 31px,
+        rgba(255, 255, 255, 0.06) 31px,
+        rgba(255, 255, 255, 0.06) 32px
+      );
+    background-size: 100% 100vh, 100% 32px;
+    background-attachment: fixed, local;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -164,7 +170,7 @@
 
 /* Hand-drawn button style */
 .btn-handdrawn {
-  @apply bg-transparent border-2 border-border text-foreground font-quirky font-bold px-6 py-2 transition-all;
+  @apply bg-transparent border-2 border-border text-foreground font-quirky font-bold px-6 py-2 transition-all duration-300 ease-out;
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
   box-shadow: 2px 2px 0px var(--border);
 }
@@ -175,26 +181,26 @@
 }
 
 .btn-handdrawn-primary {
-  @apply bg-primary text-primary-foreground border-primary border-2 font-quirky font-bold px-6 py-2 transition-all;
+  @apply bg-primary text-primary-foreground border-primary border-2 font-quirky font-bold px-6 py-2 transition-all duration-300 ease-out;
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
   box-shadow: 2px 2px 0px var(--primary);
 }
 
 .btn-handdrawn-primary:hover {
   transform: translateY(-2px) rotate(-1deg);
-  box-shadow: 4px 4px 0px var(--border);
+  box-shadow: 4px 4px 12px rgba(236, 72, 153, 0.3), 4px 4px 0px var(--border);
   background-color: var(--primary);
 }
 
 /* Cute card hover effect - Polaroid style */
 .polaroid-card {
-  @apply bg-card p-3 pb-8 border-2 border-border transition-all relative;
-  box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+  @apply bg-card p-3 pb-8 border-2 border-border transition-all duration-300 relative;
+  box-shadow: 4px 4px 0px rgba(0,0,0,0.08);
 }
 
 .polaroid-card:hover {
-  transform: translateY(-5px) rotate(1deg) scale(1.02) !important;
-  box-shadow: 8px 8px 0px rgba(0,0,0,0.15);
+  transform: translateY(-6px) rotate(1.5deg) scale(1.02) !important;
+  box-shadow: 12px 12px 20px rgba(0,0,0,0.12), 6px 6px 0px rgba(0,0,0,0.1);
   z-index: 10;
 }
 
