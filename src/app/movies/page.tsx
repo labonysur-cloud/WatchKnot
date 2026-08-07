@@ -109,9 +109,11 @@ export default function Movies() {
       setShowForm(true);
       toast({ title: "Found it!", description: `Filled in details for "${data.title || input}"` });
     } catch (err: any) {
-      toast({ title: "Couldn't identify", description: err.message || "Try entering details manually", variant: "destructive" });
+      toast({ title: "Couldn't auto-fill", description: err.message || "Try entering details manually", variant: "destructive" });
       if (!isUrl(input)) {
         setForm((prev) => ({ ...prev, title: input }));
+      } else {
+        setForm((prev) => ({ ...prev, embedUrl: input }));
       }
       setShowForm(true);
     }

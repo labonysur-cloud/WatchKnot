@@ -19,15 +19,18 @@ export async function POST(req: Request) {
     // 1. Scrape the URL (try our best, don't throw if it fails)
     let html = "";
     try {
-      const fetchPromise = fetch(url, {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
+      const response = await fetch(url, {
+        signal: controller.signal,
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
           "Accept-Language": "en-US,en;q=0.9",
         },
       });
-      const timeoutPromise = new Promise<Response>((_, reject) => setTimeout(() => reject(new Error("Fetch Timeout")), 2000));
       
-      const response = await Promise.race([fetchPromise, timeoutPromise]);
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         html = await response.text();
@@ -74,7 +77,7 @@ export async function POST(req: Request) {
       - seasons (Number: Total number of seasons if it's a show/series, otherwise null)
     `;
 
-    const groqPromise = groq.chat.completions.create({
+    const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
           role: "user",
@@ -83,10 +86,7 @@ export async function POST(req: Request) {
       ],
       model: "llama3-8b-8192", // Fast and free
       temperature: 0.1,
-    });
-    
-    const groqTimeoutPromise = new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Groq Timeout")), 4000));
-    const chatCompletion = await Promise.race([groqPromise, groqTimeoutPromise]);
+    }, { timeout: 4000 });
 
     const aiText = chatCompletion.choices[0]?.message?.content || "{}";
     
