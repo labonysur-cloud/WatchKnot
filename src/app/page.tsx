@@ -75,12 +75,7 @@ export default function Home() {
       {/* Hero */}
       <section className="relative py-16 sm:py-28 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src="/assets/hero-cinema.jpg"
-            alt="Cozy vintage cinema interior"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
           <div className="absolute inset-0 bg-gingham opacity-10" />
         </div>
 

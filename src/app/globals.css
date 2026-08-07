@@ -90,31 +90,16 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased selection:bg-primary/20;
-    /* Notebook lined paper background with subtle glow/vignette */
-    background-image: 
-      radial-gradient(circle at top, rgba(255,255,255,0.8) 0%, transparent 60%),
-      repeating-linear-gradient(
-        transparent,
-        transparent 31px,
-        rgba(0, 0, 0, 0.05) 31px,
-        rgba(0, 0, 0, 0.05) 32px
-      );
-    background-size: 100% 100vh, 100% 32px;
-    background-attachment: fixed, local;
+    background-image: radial-gradient(circle at top, rgba(255,255,255,0.6) 0%, transparent 70%);
+    background-size: 100% 100vh;
+    background-attachment: fixed;
   }
 
-  /* In dark mode, slightly different lines */
+  /* In dark mode */
   .dark body {
-    background-image: 
-      radial-gradient(circle at top, rgba(255,255,255,0.05) 0%, transparent 60%),
-      repeating-linear-gradient(
-        transparent,
-        transparent 31px,
-        rgba(255, 255, 255, 0.06) 31px,
-        rgba(255, 255, 255, 0.06) 32px
-      );
-    background-size: 100% 100vh, 100% 32px;
-    background-attachment: fixed, local;
+    background-image: radial-gradient(circle at top, rgba(255,255,255,0.05) 0%, transparent 70%);
+    background-size: 100% 100vh;
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
